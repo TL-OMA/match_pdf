@@ -30,7 +30,7 @@ fn main() {
     println!("pdf2: {}", cli.pdf2);
 
     if cli.stop {
-        println!("The 'stop' flag was set.");
+        println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");
     } else {
         println!("The 'stop' flag was not set.");
     }

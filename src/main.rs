@@ -1,4 +1,5 @@
 use clap::Parser;
+use pdfium_render::prelude::*;
 
 
 // Compare two pdf documents
@@ -39,6 +40,13 @@ fn main() {
         Some(value) => println!("The 'page' flag was set with the value {}.", value),
         None => println!("The 'page' flag was not set."),
     }
+
+    // Bind to the pdfium library (pdfium.dll)
+    let pdfium = Pdfium::new(
+        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
+    );
+
+
 }
 
 

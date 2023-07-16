@@ -1,9 +1,11 @@
+// main
+
+mod common;
+
 use clap::Parser;
 use std::path::PathBuf;
 use pdfium_render::prelude::*;
 
-
-// Compare two pdf documents
 
 // Define and collect arguments
 #[derive(Parser, Debug)]
@@ -42,6 +44,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => println!("The 'page' flag was not set."),
     }
 
+    // Use the get_temp_dir function from the common module
+    let temp_path: PathBuf = common::get_temp_dir("pdf_match");
+    println!("App-specific temp directory is: {:?}", temp_path);
+
     // Bind to the pdfium library (pdfium.dll)
     let pdfium = Pdfium::new(
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
@@ -60,12 +66,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ... then render each page to a bitmap image, saving each image to a JPEG file.
 
     for (index, page) in pdf_document_1.pages().iter().enumerate() {
+
+        // Create the path value that includes a unique file name
+        let mut image_path = temp_path.clone();
+        image_path.push(format!("test-page-{}.jpg", index));
+
         page.render_with_config(&render_config)?
             .as_image() // Renders this page to an image::DynamicImage...
             .as_rgba8() // ... then converts it to an image::Image...
             .ok_or(PdfiumError::ImageError)?
-            .save_with_format(
-                format!("test-page-{}.jpg", index), 
+            .save_with_format( 
+                image_path,
                 image::ImageFormat::Jpeg
             ) // ... and saves it to a file.
             .map_err(|_| PdfiumError::ImageError)?;

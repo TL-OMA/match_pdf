@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::path::PathBuf;
 use pdfium_render::prelude::*;
 
 
@@ -11,8 +12,8 @@ use pdfium_render::prelude::*;
 #[command(version = "0.1")]
 #[command(about = "Compares two pdf documents.", long_about = None)]
 struct Cli {
-    pdf1: String,
-    pdf2: String,
+    original_pdf1_path: PathBuf,
+    original_pdf2_path: PathBuf,
 
     /// An optional 'stop' flag: Stop the comparison after the first page where differences are found.
     #[arg(short, long)]
@@ -27,8 +28,8 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    println!("pdf1: {}", cli.pdf1);
-    println!("pdf2: {}", cli.pdf2);
+    println!("pdf1: {}", cli.original_pdf1_path.display());
+    println!("pdf2: {}", cli.original_pdf2_path.display());
 
     if cli.stop {
         println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");
@@ -45,6 +46,7 @@ fn main() {
     let pdfium = Pdfium::new(
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
     );
+
 
 
 }

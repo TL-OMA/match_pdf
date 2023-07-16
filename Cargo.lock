@@ -633,6 +633,7 @@ name = "match_pdf"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "image",
  "pdfium-render",
 ]
 

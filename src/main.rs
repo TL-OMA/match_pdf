@@ -25,7 +25,7 @@ struct Cli {
 
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     println!("pdf1: {}", cli.original_pdf1_path.display());
@@ -47,7 +47,32 @@ fn main() {
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
     );
 
+    // Load the document from the given path...
+    let pdf_document_1 = pdfium.load_pdf_from_file(&cli.original_pdf1_path, None)?;
 
+    // ... set rendering options that will be applied to all pages...
+
+    let render_config = PdfRenderConfig::new()
+    .set_target_width(2000)
+    .set_maximum_height(2000)
+    .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true);
+
+    // ... then render each page to a bitmap image, saving each image to a JPEG file.
+
+    for (index, page) in pdf_document_1.pages().iter().enumerate() {
+        page.render_with_config(&render_config)?
+            .as_image() // Renders this page to an image::DynamicImage...
+            .as_rgba8() // ... then converts it to an image::Image...
+            .ok_or(PdfiumError::ImageError)?
+            .save_with_format(
+                format!("test-page-{}.jpg", index), 
+                image::ImageFormat::Jpeg
+            ) // ... and saves it to a file.
+            .map_err(|_| PdfiumError::ImageError)?;
+    }
+
+
+    Ok(())
 
 }
 

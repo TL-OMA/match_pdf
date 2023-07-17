@@ -1,6 +1,7 @@
 // main
 
 mod common;
+mod images;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -28,6 +29,9 @@ struct Cli {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    // Parse the command line arguments
+
     let cli = Cli::parse();
 
     println!("pdf1: {}", cli.original_pdf1_path.display());
@@ -44,42 +48,64 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => println!("The 'page' flag was not set."),
     }
 
-    // Use the get_temp_dir function from the common module
+
+    // Define a temp folder to use based on the system temp folder
+
     let temp_path: PathBuf = common::get_temp_dir("pdf_match");
     println!("App-specific temp directory is: {:?}", temp_path);
 
-    // Bind to the pdfium library (pdfium.dll)
+
+    // Bind to the pdfium library (external, pre-built pdfium.dll)
+
     let pdfium = Pdfium::new(
         Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
     );
 
-    // Load the document from the given path...
+    // Load the pdf documents...
     let pdf_document_1 = pdfium.load_pdf_from_file(&cli.original_pdf1_path, None)?;
+    let pdf_document_2 = pdfium.load_pdf_from_file(&cli.original_pdf2_path, None)?;
 
-    // ... set rendering options that will be applied to all pages...
+    // Get the number of pages for the shortest document
+    let min_pages = pdf_document_1.pages().len().min(pdf_document_2.pages().len());
+
+    // ... set pdf to image rendering options that will be applied to all pages...
 
     let render_config = PdfRenderConfig::new()
     .set_target_width(2000)
     .set_maximum_height(2000)
     .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true);
 
-    // ... then render each page to a bitmap image, saving each image to a JPEG file.
+    // ... then iterate through each page of the the shortest pdf document
 
-    for (index, page) in pdf_document_1.pages().iter().enumerate() {
+    for index in 0..min_pages {
+        let doc1page = pdf_document_1.pages().get(index)?;
+        let image1 = images::render_page(&doc1page, &render_config)?;
+
+        let doc2page = pdf_document_2.pages().get(index)?;
+        let image2 = images::render_page(&doc2page, &render_config)?;
+
+        // Do something with image1 and image2...
 
         // Create the path value that includes a unique file name
-        let mut image_path = temp_path.clone();
-        image_path.push(format!("test-page-{}.jpg", index));
+        let mut image_path1 = temp_path.clone();
+        image_path1.push(format!("doc1-page-{}.jpg", index));
 
-        page.render_with_config(&render_config)?
-            .as_image() // Renders this page to an image::DynamicImage...
-            .as_rgba8() // ... then converts it to an image::Image...
-            .ok_or(PdfiumError::ImageError)?
-            .save_with_format( 
-                image_path,
-                image::ImageFormat::Jpeg
-            ) // ... and saves it to a file.
-            .map_err(|_| PdfiumError::ImageError)?;
+        image1.save_with_format( 
+            image_path1,
+            image::ImageFormat::Jpeg
+        ) // ... and saves it to a file.
+        .map_err(|_| PdfiumError::ImageError)?;
+
+        // Create the path value that includes a unique file name
+        let mut image_path2 = temp_path.clone();
+        image_path2.push(format!("doc2-page-{}.jpg", index));
+
+        image2.save_with_format( 
+            image_path2,
+            image::ImageFormat::Jpeg
+        ) // ... and saves it to a file.
+        .map_err(|_| PdfiumError::ImageError)?;
+
     }
 
 

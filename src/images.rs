@@ -18,7 +18,7 @@ pub fn render_page(page: &PdfPage, render_config: &PdfRenderConfig) -> Result<Rg
 
 
 /// Compare two images, tracking chunks to make the later highlighting easier
-fn compare_images_in_chunks(img1: &ImageBuffer<image::Rgba<u8>, Vec<u8>>, img2: &ImageBuffer<image::Rgba<u8>, Vec<u8>>) -> Vec<(u32, u32)> {
+pub fn compare_images_in_chunks(img1: &ImageBuffer<image::Rgba<u8>, Vec<u8>>, img2: &ImageBuffer<image::Rgba<u8>, Vec<u8>>) -> Vec<(u32, u32)> {
     let chunk_size = 10;
     let mut differing_chunks = vec![];
 

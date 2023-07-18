@@ -106,6 +106,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ) // ... and saves it to a file.
         .map_err(|_| PdfiumError::ImageError)?;
 
+
+        // Compare the images of the two pages
+        let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+
+        println!("page_differences_vector: {:?}", page_differences_vector);
+
+
     }
 
 

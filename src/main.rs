@@ -113,6 +113,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("page_differences_vector: {:?}", page_differences_vector);
 
 
+        // Highlight the differences within the images
+        let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
+
+        let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+
+
+        // Create a path value that includes a unique file name
+        let mut image_path3 = temp_path.clone();
+        image_path3.push(format!("doc1-page-{}-highlighted.jpg", index));
+
+        doc1_page_highlighted_image.save_with_format( 
+            image_path3,
+            image::ImageFormat::Jpeg
+        ) // ... and saves it to a file.
+        .map_err(|_| PdfiumError::ImageError)?;
+
+        // Create a path value that includes a unique file name
+        let mut image_path4 = temp_path.clone();
+        image_path4.push(format!("doc2-page-{}-highlighted.jpg", index));
+
+        doc2_page_highlighted_image.save_with_format( 
+            image_path4,
+            image::ImageFormat::Jpeg
+        ) // ... and saves it to a file.
+        .map_err(|_| PdfiumError::ImageError)?;
+
+
     }
 
 

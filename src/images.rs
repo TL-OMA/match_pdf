@@ -75,7 +75,29 @@ pub fn highlight_chunks(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, chunks: &[(u32, 
                 // Check if the pixel is in the image
                 if new_x < width && new_y < height {
                     let pixel = new_image.get_pixel_mut(new_x, new_y);
-                    pixel[0] = 255; // Set red channel to maximum
+
+                    // If the pixel is dark
+                    if pixel[0] < 150 && pixel[1] < 150 && pixel[2] < 150 {
+                        // Change it appropriately (Light Pink)
+                        pixel[0] = 249;
+                        pixel[1] = 133;
+                        pixel[2] = 139;
+
+                    // ...else if the pixel is light 
+                    } else if pixel[0] > 215 && pixel[1] < 215 && pixel[2] < 215{
+                        // Change it appropriately (Hot Pink)
+                        pixel[0] = 118;
+                        pixel[1] = 17;
+                        pixel[2] = 55; 
+
+
+                    } else {
+                        // Make all other pixels Maroon
+                        pixel[0] = 237;
+                        pixel[1] = 51;
+                        pixel[2] = 95; 
+
+                    }
                 }
             }
         }

@@ -2,7 +2,7 @@
 
 use pdfium_render::prelude::*;
 use image::RgbaImage;
-use image::ImageBuffer;
+use image::{ImageBuffer, Rgba};
 
 
 /// Given a pdf document object (loaded pdf) and page number, return an image of the page
@@ -57,4 +57,29 @@ pub fn compare_images_in_chunks(img1: &ImageBuffer<image::Rgba<u8>, Vec<u8>>, im
     }
 
     differing_chunks
+}
+
+
+
+// Highlight the differing chunks within the image
+pub fn highlight_chunks(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, chunks: &[(u32, u32)]) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+    let (width, height) = image.dimensions();
+    let mut new_image = image.clone();
+
+    for &(x, y) in chunks {
+        for dx in 0..10 {
+            for dy in 0..10 {
+                let new_x = x + dx;
+                let new_y = y + dy;
+
+                // Check if the pixel is in the image
+                if new_x < width && new_y < height {
+                    let pixel = new_image.get_pixel_mut(new_x, new_y);
+                    pixel[0] = 255; // Set red channel to maximum
+                }
+            }
+        }
+    }
+
+    new_image
 }

@@ -26,6 +26,10 @@ struct Cli {
     #[arg(short, long)]
     page: Option<i32>,
 
+    /// An optional 'results_file' flag: Use with a file path to indicate where to place a results file.
+    #[arg(short, long)]
+    results_file: Option<PathBuf>,
+
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,10 +48,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match cli.page {
-        Some(value) => println!("The 'page' flag was set with the value {}.", value),
+        Some(value) => println!("The 'page' flag was set with value {}.", value),
         None => println!("The 'page' flag was not set."),
     }
 
+    match cli.results_file {
+        Some(value) => println!("The 'results_file' flag was set with value {}.", value.to_string_lossy()),
+        None => println!("The 'results_file' flag was not set."),
+    }
 
     // Define a temp folder to use based on the system temp folder
 
@@ -76,17 +84,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true);
 
     // ... then iterate through each page of the the shortest pdf document
-
     for index in 0..min_pages {
+
+        // Create an image of the current page form document 1
         let doc1page = pdf_document_1.pages().get(index)?;
         let image1 = images::render_page(&doc1page, &render_config)?;
 
+        // Create an image of the current page form document 2
         let doc2page = pdf_document_2.pages().get(index)?;
         let image2 = images::render_page(&doc2page, &render_config)?;
 
-        // Do something with image1 and image2...
-
-        // Create the path value that includes a unique file name
+        // DEGUG: Create a unique path/filename and write to disk for debugging purposes
         let mut image_path1 = temp_path.clone();
         image_path1.push(format!("doc1-page-{}.jpg", index));
 
@@ -96,7 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ) // ... and saves it to a file.
         .map_err(|_| PdfiumError::ImageError)?;
 
-        // Create the path value that includes a unique file name
+        // DEBUG: Create a unique path/filename and write to disk for debugging purposes
         let mut image_path2 = temp_path.clone();
         image_path2.push(format!("doc2-page-{}.jpg", index));
 
@@ -113,13 +121,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("page_differences_vector: {:?}", page_differences_vector);
 
 
+        /***************
+        If a results file is desired, highlight the differences in the images, and add to a results file
+        ***************/
+
+
         // Highlight the differences within the images
         let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
 
         let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
 
 
-        // Create a path value that includes a unique file name
+        // Create a unique path/filename and write to disk for debugging purposes
         let mut image_path3 = temp_path.clone();
         image_path3.push(format!("doc1-page-{}-highlighted.jpg", index));
 
@@ -129,7 +142,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ) // ... and saves it to a file.
         .map_err(|_| PdfiumError::ImageError)?;
 
-        // Create a path value that includes a unique file name
+        // Create a unique path/filename and write to disk for debugging purposes
         let mut image_path4 = temp_path.clone();
         image_path4.push(format!("doc2-page-{}-highlighted.jpg", index));
 

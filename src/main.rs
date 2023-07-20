@@ -18,17 +18,26 @@ struct Cli {
     original_pdf1_path: PathBuf,
     original_pdf2_path: PathBuf,
 
-    /// An optional 'stop_page' flag: Stop the comparison after the first page where differences are found.
+
+    /// An optional 'stop' flag: Stop the comparison after the first page where differences are found.
     #[arg(short, long)]
     stop: bool,
 
-    /// An optional 'page' flag: Stop the comparison after # pages if a difference was found in the first # pages.
+    /// An optional 'pages' flag: Stop the comparison after ## pages if a difference was found in the first ## pages.
     #[arg(short, long)]
-    page: Option<i32>,
+    pages: Option<i32>,
+
+    /// An optional 'max_pages' flag: At a maximum, compare ## pages.  Can be combined with other flags.
+    #[arg(short, long)]
+    max_pages: Option<i32>,
 
     /// An optional 'output' flag: Use with a file path to indicate where to place a results file.
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// An optional 'config' flag: Use with a file path to indicate where to find the config fileplace a results file.
+    #[arg(short, long)]
+    config: Option<PathBuf>,
 
 }
 
@@ -47,14 +56,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("The 'stop' flag was not set.");
     }
 
-    match cli.stop_page {
+    match cli.pages {
         Some(value) => println!("The 'page' flag was set with value {}.", value),
         None => println!("The 'page' flag was not set."),
+    }
+
+    match cli.max_pages {
+        Some(value) => println!("The 'max_pages' flag was set with value {}.", value),
+        None => println!("The 'max_pages' flag was not set."),
     }
 
     match cli.output {
         Some(value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
         None => println!("The 'output' flag was not set."),
+    }
+
+    match cli.config {
+        Some(value) => println!("The 'config' flag was set with value {}.", value.to_string_lossy()),
+        None => println!("The 'config' flag was not set."),
     }
 
     // Define a temp folder to use based on the system temp folder

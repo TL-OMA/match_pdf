@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match cli.output {
-        Some(value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
+        Some(ref value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
         None => println!("The 'output' flag was not set."),
     }
 
@@ -105,15 +105,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ... then iterate through each page of the the shortest pdf document
     for index in 0..min_pages {
 
-        // Create an image of the current page form document 1
+        // Create an image of the current page from document 1
         let doc1page = pdf_document_1.pages().get(index)?;
         let image1 = images::render_page(&doc1page, &render_config)?;
 
-        // Create an image of the current page form document 2
+        // Create an image of the current page from document 2
         let doc2page = pdf_document_2.pages().get(index)?;
         let image2 = images::render_page(&doc2page, &render_config)?;
 
-        // DEGUG: Create a unique path/filename and write to disk for debugging purposes
+        // DEBUG: Create a unique path/filename and write to disk for debugging purposes
         let mut image_path1 = temp_path.clone();
         image_path1.push(format!("doc1-page-{}.jpg", index));
 
@@ -144,32 +144,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         If a results file is desired, highlight the differences in the images, and add to a results file
         ***************/
 
+        // If the user used the 'output' argument
+        if let Some(ref value) = cli.output {
+            
+            println!("The 'output' flag was set with value {}.", value.to_string_lossy());
+                      
+            // Take actions to highlight differences and create an output document
 
-        // Highlight the differences within the images
-        let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
+            // Highlight the differences within the images
+            let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
 
-        let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+            let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+
+            
+            // Create a unique path/filename and write to disk for debugging purposes
+            let mut image_path3 = temp_path.clone();
+            image_path3.push(format!("doc1-page-{}-highlighted.jpg", index));
+
+            doc1_page_highlighted_image.save_with_format( 
+                image_path3,
+                image::ImageFormat::Jpeg
+            ) // ... and saves it to a file.
+            .map_err(|_| PdfiumError::ImageError)?;
+
+            // Create a unique path/filename and write to disk for debugging purposes
+            let mut image_path4 = temp_path.clone();
+            image_path4.push(format!("doc2-page-{}-highlighted.jpg", index));
+
+            doc2_page_highlighted_image.save_with_format( 
+                image_path4,
+                image::ImageFormat::Jpeg
+            ) // ... and saves it to a file.
+            .map_err(|_| PdfiumError::ImageError)?;
 
 
-        // Create a unique path/filename and write to disk for debugging purposes
-        let mut image_path3 = temp_path.clone();
-        image_path3.push(format!("doc1-page-{}-highlighted.jpg", index));
+        }        
 
-        doc1_page_highlighted_image.save_with_format( 
-            image_path3,
-            image::ImageFormat::Jpeg
-        ) // ... and saves it to a file.
-        .map_err(|_| PdfiumError::ImageError)?;
+        
 
-        // Create a unique path/filename and write to disk for debugging purposes
-        let mut image_path4 = temp_path.clone();
-        image_path4.push(format!("doc2-page-{}-highlighted.jpg", index));
-
-        doc2_page_highlighted_image.save_with_format( 
-            image_path4,
-            image::ImageFormat::Jpeg
-        ) // ... and saves it to a file.
-        .map_err(|_| PdfiumError::ImageError)?;
+        
 
 
     }

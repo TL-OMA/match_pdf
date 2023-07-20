@@ -18,7 +18,7 @@ struct Cli {
     original_pdf1_path: PathBuf,
     original_pdf2_path: PathBuf,
 
-    /// An optional 'stop' flag: Stop the comparison after the first page where differences are found.
+    /// An optional 'stop_page' flag: Stop the comparison after the first page where differences are found.
     #[arg(short, long)]
     stop: bool,
 
@@ -26,9 +26,9 @@ struct Cli {
     #[arg(short, long)]
     page: Option<i32>,
 
-    /// An optional 'results_file' flag: Use with a file path to indicate where to place a results file.
+    /// An optional 'output' flag: Use with a file path to indicate where to place a results file.
     #[arg(short, long)]
-    results_file: Option<PathBuf>,
+    output: Option<PathBuf>,
 
 }
 
@@ -47,14 +47,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("The 'stop' flag was not set.");
     }
 
-    match cli.page {
+    match cli.stop_page {
         Some(value) => println!("The 'page' flag was set with value {}.", value),
         None => println!("The 'page' flag was not set."),
     }
 
-    match cli.results_file {
-        Some(value) => println!("The 'results_file' flag was set with value {}.", value.to_string_lossy()),
-        None => println!("The 'results_file' flag was not set."),
+    match cli.output {
+        Some(value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
+        None => println!("The 'output' flag was not set."),
     }
 
     // Define a temp folder to use based on the system temp folder

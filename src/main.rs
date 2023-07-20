@@ -19,6 +19,10 @@ struct Cli {
     original_pdf2_path: PathBuf,
 
 
+    /// An optional 'debug' flag: Include verbose output to the console.
+    #[arg(short, long)]
+    debug: bool,
+
     /// An optional 'stop' flag: Stop the comparison after the first page where differences are found.
     #[arg(short, long)]
     stop: bool,
@@ -50,6 +54,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("pdf1: {}", cli.original_pdf1_path.display());
     println!("pdf2: {}", cli.original_pdf2_path.display());
 
+    
+    if cli.debug {
+        println!("The 'debug' flag was set.  More information will be provided at the console.");
+    } else {
+        println!("The 'debug' flag was not set.");
+    }
+        
     if cli.stop {
         println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");
     } else {
@@ -113,25 +124,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let doc2page = pdf_document_2.pages().get(index)?;
         let image2 = images::render_page(&doc2page, &render_config)?;
 
-        // DEBUG: Create a unique path/filename and write to disk for debugging purposes
-        let mut image_path1 = temp_path.clone();
-        image_path1.push(format!("doc1-page-{}.jpg", index));
 
-        image1.save_with_format( 
-            image_path1,
-            image::ImageFormat::Jpeg
-        ) // ... and saves it to a file.
-        .map_err(|_| PdfiumError::ImageError)?;
+        // If the debug flag was used, write the images to files
+        if cli.debug{
 
-        // DEBUG: Create a unique path/filename and write to disk for debugging purposes
-        let mut image_path2 = temp_path.clone();
-        image_path2.push(format!("doc2-page-{}.jpg", index));
+            // Create a unique path/filename and write to disk for debugging purposes
+            let mut image_path1 = temp_path.clone();
+            image_path1.push(format!("doc1-page-{}.jpg", index));
 
-        image2.save_with_format( 
-            image_path2,
-            image::ImageFormat::Jpeg
-        ) // ... and saves it to a file.
-        .map_err(|_| PdfiumError::ImageError)?;
+            image1.save_with_format( 
+                image_path1,
+                image::ImageFormat::Jpeg
+            ) // ... and saves it to a file.
+            .map_err(|_| PdfiumError::ImageError)?;
+
+            // Create a unique path/filename and write to disk for debugging purposes
+            let mut image_path2 = temp_path.clone();
+            image_path2.push(format!("doc2-page-{}.jpg", index));
+
+            image2.save_with_format( 
+                image_path2,
+                image::ImageFormat::Jpeg
+            ) // ... and saves it to a file.
+            .map_err(|_| PdfiumError::ImageError)?;
+
+        }
+
+        
 
 
         // Compare the images of the two pages

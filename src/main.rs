@@ -156,8 +156,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Compare the images of the two pages
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
 
-        println!("page_differences_vector: {:?}", page_differences_vector);
-
+        if cli.debug {
+            println!("page_differences_vector: {:?}", page_differences_vector);
+        }
 
         /***************
         If a results file is desired, highlight the differences in the images, and add to a results file

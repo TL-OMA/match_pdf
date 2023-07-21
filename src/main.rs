@@ -45,7 +45,13 @@ struct Cli {
 
 }
 
+
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    // Define global variables
+    let mut differences_found: bool = false;
+
 
     // Parse the command line arguments
 
@@ -150,11 +156,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         }
 
-        
-
-
         // Compare the images of the two pages
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+
+        // Set the DIFFERENCES_FOUND variable to true if the vector is not empty
+        if !page_differences_vector.is_empty(){}
+            differences_found = true;
+        }
 
         if cli.debug {
             println!("page_differences_vector: {:?}", page_differences_vector);
@@ -168,7 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(ref value) = cli.output {
             
             println!("The 'output' flag was set with value {}.", value.to_string_lossy());
-                      
+          
             // Take actions to highlight differences and create an output document
 
             // Highlight the differences within the images

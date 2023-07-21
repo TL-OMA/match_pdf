@@ -160,7 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
 
         // Set the DIFFERENCES_FOUND variable to true if the vector is not empty
-        if !page_differences_vector.is_empty(){}
+        if !page_differences_vector.is_empty(){
             differences_found = true;
         }
 

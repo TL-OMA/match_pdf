@@ -138,32 +138,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let image2 = images::render_page(&doc2page, &render_config)?;
 
 
-        // If the debug flag was used, write the images to files
-        if cli.debug{
-
-            // Create a unique path/filename and write to disk for debugging purposes
-            let mut image_path1 = temp_path.clone();
-            image_path1.push(format!("doc1-page-{}.jpg", index));
-
-            image1.save_with_format( 
-                image_path1,
-                image::ImageFormat::Jpeg
-            ) // ... and saves it to a file.
-            .map_err(|_| PdfiumError::ImageError)?;
-
-            // Create a unique path/filename and write to disk for debugging purposes
-            let mut image_path2 = temp_path.clone();
-            image_path2.push(format!("doc2-page-{}.jpg", index));
-
-            image2.save_with_format( 
-                image_path2,
-                image::ImageFormat::Jpeg
-            ) // ... and saves it to a file.
-            .map_err(|_| PdfiumError::ImageError)?;
-
-        }       
-
-
         // Compare the images of the two pages
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
 

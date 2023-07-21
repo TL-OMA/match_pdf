@@ -217,9 +217,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }        
 
         /******************************************************
-        If stop is true, clean up and stop the comparison.
+        If stop is true and differences have been found, stop the comparison.
         ******************************************************/
-
+        if cli.stop && differences_found{
+            break;
+        }
         
 
         /******************************************************
@@ -229,7 +231,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
         /******************************************************
-        If the current page is the max_pages value, clean up and stop the comparison.
+        If the current page is the max_pages value, stop the comparison.
         ******************************************************/
 
 

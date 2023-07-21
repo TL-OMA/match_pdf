@@ -68,8 +68,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     match cli.pages {
-        Some(value) => println!("The 'page' flag was set with value {}.", value),
-        None => println!("The 'page' flag was not set."),
+        Some(value) => println!("The 'pages' flag was set with value {}.", value),
+        None => println!("The 'pages' flag was not set."),
     }
 
     match cli.max_pages {
@@ -160,9 +160,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("page_differences_vector: {:?}", page_differences_vector);
         }
 
-        /***************
+        /******************************************************
         If a results file is desired, highlight the differences in the images, and add to a results file
-        ***************/
+        ******************************************************/
 
         // If the user used the 'output' argument
         if let Some(ref value) = cli.output {
@@ -200,13 +200,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         }        
 
-        
+        /******************************************************
+        If stop is true, clean up and stop the comparison.
+        ******************************************************/
 
         
 
+        /******************************************************
+        If the current page is equal to the 'pages' value, stop if there have been differences.
+        ******************************************************/
 
-    }
 
+
+        /******************************************************
+        If the current page is the max_pages value, clean up and stop the comparison.
+        ******************************************************/
+
+
+        
+
+    } // End of the for loop iterating through each page of the the shortest pdf document
+
+
+    // Clean up, the comparison is over.
+
+    
 
     Ok(())
 

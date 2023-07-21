@@ -4,6 +4,7 @@ mod common;
 mod images;
 
 use clap::Parser;
+use std::fs;
 use std::path::PathBuf;
 use pdfium_render::prelude::*;
 
@@ -93,6 +94,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => println!("The 'config' flag was not set."),
     }
 
+
+    // If the config argument was used, evaluate and prep the data
+
+
+
+
     // Define a temp folder to use based on the system temp folder
 
     let temp_path: PathBuf = common::get_temp_dir("pdf_match");
@@ -154,7 +161,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ) // ... and saves it to a file.
             .map_err(|_| PdfiumError::ImageError)?;
 
-        }
+        }       
+
 
         // Compare the images of the two pages
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
@@ -232,7 +240,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Clean up, the comparison is over.
 
+    if differences_found {
+
+        println!("Differences were found.")
+        
+    } else {
+
+        println!("The PDF documents match.")
+
+    }
     
+
+    // Remove the temp folder if not in debug mode.
+    if !cli.debug {
+        fs::remove_dir_all(temp_path)?;
+    }
+
 
     Ok(())
 

@@ -147,7 +147,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if cli.debug {
-            println!("page_differences_vector: {:?}", page_differences_vector);
+            println!("page_differences_vector for page {:?}: {:?}", index, page_differences_vector);
         }
 
         /******************************************************

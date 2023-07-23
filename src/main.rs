@@ -62,37 +62,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("pdf2: {}", cli.original_pdf2_path.display());
 
     
+    // If the debug flag is set, print some flag and argument messages to the console
     if cli.debug {
         println!("The 'debug' flag was set.  More information will be provided at the console.");
-    } else {
-        println!("The 'debug' flag was not set.");
-    }
+    
+        if cli.stop {
+            println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");
+        } else {
+            println!("The 'stop' flag was not set.");
+        }
+    
+        match cli.pages {
+            Some(value) => println!("The 'pages' flag was set with value {}.", value),
+            None => println!("The 'pages' flag was not set."),
+        }
+    
+        match cli.max_pages {
+            Some(value) => println!("The 'max_pages' flag was set with value {}.", value),
+            None => println!("The 'max_pages' flag was not set."),
+        }
+    
+        match cli.output {
+            Some(ref value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
+            None => println!("The 'output' flag was not set."),
+        }
+    
+        match cli.config {
+            Some(value) => println!("The 'config' flag was set with value {}.", value.to_string_lossy()),
+            None => println!("The 'config' flag was not set."),
+        }
+    
+    } 
         
-    if cli.stop {
-        println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");
-    } else {
-        println!("The 'stop' flag was not set.");
-    }
 
-    match cli.pages {
-        Some(value) => println!("The 'pages' flag was set with value {}.", value),
-        None => println!("The 'pages' flag was not set."),
-    }
-
-    match cli.max_pages {
-        Some(value) => println!("The 'max_pages' flag was set with value {}.", value),
-        None => println!("The 'max_pages' flag was not set."),
-    }
-
-    match cli.output {
-        Some(ref value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
-        None => println!("The 'output' flag was not set."),
-    }
-
-    match cli.config {
-        Some(value) => println!("The 'config' flag was set with value {}.", value.to_string_lossy()),
-        None => println!("The 'config' flag was not set."),
-    }
 
 
     // If the config argument was used, evaluate and prep the data
@@ -103,8 +105,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Define a temp folder to use based on the system temp folder
 
     let temp_path: PathBuf = common::get_temp_dir("pdf_match");
-    println!("App-specific temp directory is: {:?}", temp_path);
 
+    if cli.debug {
+        println!("App-specific temp directory is: {:?}", temp_path);
+    }
 
     // Bind to the pdfium library (external, pre-built pdfium.dll)
 
@@ -129,6 +133,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ... then iterate through each page of the the shortest pdf document
     for index in 0..min_pages {
 
+        if index % 10 == 0 {
+            println!("Processing page {:?}", index);
+        }
+
         // Create an image of the current page from document 1
         let doc1page = pdf_document_1.pages().get(index)?;
         let image1 = images::render_page(&doc1page, &render_config)?;
@@ -144,11 +152,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Set the DIFFERENCES_FOUND variable to true if the vector is not empty
         if !page_differences_vector.is_empty(){
             differences_found = true;
+
+            if cli.debug {
+                println!("page_differences_vector for page {:?}: {:?}", index, page_differences_vector);
+            }
+
         }
 
-        if cli.debug {
-            println!("page_differences_vector for page {:?}: {:?}", index, page_differences_vector);
-        }
 
         /******************************************************
         If a results file is desired, highlight the differences in the images, and add to a results file
@@ -230,6 +240,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Remove the temp folder if not in debug mode.
     if !cli.debug {
         fs::remove_dir_all(temp_path)?;
+    } else {
+        println!("Since the debug flag is set, the app-specific temp directory was not removed: {:?}", temp_path);
     }
 
 

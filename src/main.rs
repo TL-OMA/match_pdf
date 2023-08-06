@@ -128,7 +128,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let render_config = PdfRenderConfig::new()
     .set_target_width(2000)
     .set_maximum_height(2000)
-    .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true);
+    .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true)
+    .render_form_data(false);
 
     // ... then iterate through each page of the the shortest pdf document
     for index in 0..min_pages {

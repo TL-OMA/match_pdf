@@ -40,7 +40,7 @@ struct Cli {
     #[arg(short, long)]
     output: Option<PathBuf>,
 
-    /// An optional 'config' flag: Use with a file path to indicate where to find the config fileplace a results file.
+    /// An optional 'config' flag: Use with a file path to indicate where to find the config file.
     #[arg(short, long)]
     config: Option<PathBuf>,
 
@@ -124,14 +124,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let min_pages = pdf_document_1.pages().len().min(pdf_document_2.pages().len());
 
     // ... set pdf to image rendering options that will be applied to all pages...
-
     let render_config = PdfRenderConfig::new()
     .set_target_width(2000)
     .set_maximum_height(2000)
     .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true)
     .render_form_data(false);
 
-    // ... then iterate through each page of the the shortest pdf document
+    // ... then iterate through the pages until reaching the end of the shortest document
     for index in 0..min_pages {
 
         if index % 10 == 0 {
@@ -205,6 +204,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         If stop is true and differences have been found, stop the comparison.
         ******************************************************/
         if cli.stop && differences_found{
+            
+            // Break out of the for loop and finish up
             break;
         }
         
@@ -212,8 +213,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         /******************************************************
         If the current page is equal to the 'pages' value, stop if there have been differences.
         ******************************************************/
+        // If the user used the pages flag and gave it a value
+        if let Some(value) = cli.pages {
 
+            // If the index (page) is the same as the page the user specified
+            if value == (index + 1) as i32{
 
+                if cli.debug {
+                    println!("The 'pages' flag was set with value {}, so the comparison is stopping now since differences were found.", value);
+                }
+
+                // Break out of the for loop and finish up
+                break;
+            }
+
+        }
 
         /******************************************************
         If the current page is the max_pages value, stop the comparison.

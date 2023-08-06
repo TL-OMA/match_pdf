@@ -32,9 +32,9 @@ struct Cli {
     #[arg(short, long)]
     pages: Option<i32>,
 
-    /// An optional 'max_pages' flag: At a maximum, compare ## pages.  Can be combined with other flags.
+    /// An optional 'maxpages' flag: At a maximum, compare ## pages.  Can be combined with other flags.
     #[arg(short, long)]
-    max_pages: Option<i32>,
+    maxpages: Option<i32>,
 
     /// An optional 'output' flag: Use with a file path to indicate where to place a results file.
     #[arg(short, long)]
@@ -77,9 +77,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => println!("The 'pages' flag was not set."),
         }
     
-        match cli.max_pages {
-            Some(value) => println!("The 'max_pages' flag was set with value {}.", value),
-            None => println!("The 'max_pages' flag was not set."),
+        match cli.maxpages {
+            Some(value) => println!("The 'maxpages' flag was set with value {}.", value),
+            None => println!("The 'maxpages' flag was not set."),
         }
     
         match cli.output {
@@ -230,9 +230,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         /******************************************************
-        If the current page is the max_pages value, stop the comparison.
+        If the current page is the maxpages value, stop the comparison.
         ******************************************************/
+        // If the user used the max pages flag and gave it a value
+        if let Some(value) = cli.maxpages {
 
+            // If the index (page) is the same as the page the user specified
+            if value == (index + 1) as i32{
+
+                if cli.debug {
+                    println!("The 'maxpages' flag was set with value {value}, so the comparison is stopping now.");
+                }
+
+                // Break out of the for loop and finish up
+                break;
+            }
+
+        }
 
         
 

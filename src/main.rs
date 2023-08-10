@@ -73,22 +73,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     
         match cli.pages {
-            Some(value) => println!("The 'pages' flag was set with value {}.", value),
+            Some(value) => println!("The 'pages' flag was set with value:  {}", value),
             None => println!("The 'pages' flag was not set."),
         }
     
         match cli.maxpages {
-            Some(value) => println!("The 'maxpages' flag was set with value {}.", value),
+            Some(value) => println!("The 'maxpages' flag was set with value:  {}", value),
             None => println!("The 'maxpages' flag was not set."),
         }
     
         match cli.output {
-            Some(ref value) => println!("The 'output' flag was set with value {}.", value.to_string_lossy()),
+            Some(ref value) => println!("The 'output' flag was set with value:  {}", value.to_string_lossy()),
             None => println!("The 'output' flag was not set."),
         }
     
         match cli.config {
-            Some(value) => println!("The 'config' flag was set with value {}.", value.to_string_lossy()),
+            Some(value) => println!("The 'config' flag was set with value:  {}", value.to_string_lossy()),
             None => println!("The 'config' flag was not set."),
         }
     
@@ -166,8 +166,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // If the user used the 'output' argument
         if let Some(ref value) = cli.output {
-            
-            println!("The 'output' flag was set with value {}.", value.to_string_lossy());
           
             // Take actions to highlight differences and create an output document
 

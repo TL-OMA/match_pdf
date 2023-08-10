@@ -52,6 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Define global variables
     let mut differences_found: bool = false;
+    let mut output_is_set: bool = false;
 
 
     // Parse the command line arguments
@@ -93,8 +94,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     
     } 
-        
+    
 
+    // If the output argument is true, set the global output_is_set var
+    match cli.output {
+        Some(ref value) => output_is_set = true,
+        _ => (), // Do nothing when None occurs.
+    }
 
 
     // If the config argument was used, evaluate and prep the data
@@ -129,6 +135,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .set_maximum_height(2000)
     .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true)
     .render_form_data(false);
+
+    // Create a variable to hold the PDF document if it's needed
+    let mut output_pdf = pdfium.create_new_pdf()?;
 
     // ... then iterate through the pages until reaching the end of the shortest document
     for index in 0..min_pages {
@@ -194,6 +203,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 image::ImageFormat::Jpeg
             ) // ... and saves it to a file.
             .map_err(|_| PdfiumError::ImageError)?;
+
+            // If the output flag was used
+            if output_is_set {
+
+                // Create a size for the page that is about to be added
+                let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
+                let height = doc1_page_highlighted_image.height() + doc2_page_highlighted_image.height();
+
+                let width_in_points = PdfPoints::new(width as f32);
+                let height_in_points = PdfPoints::new(height as f32);
+
+                let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
+
+                // Add a page to the output pdf document
+                let mut page = output_pdf
+                    .pages_mut()
+                    .create_page_at_end(paper_size);
+
+            }
+
 
 
         }        

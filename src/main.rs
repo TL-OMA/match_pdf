@@ -4,6 +4,7 @@ mod common;
 mod images;
 
 use clap::Parser;
+use image::{ImageBuffer, DynamicImage};
 use std::fs;
 use std::path::PathBuf;
 use pdfium_render::prelude::*;
@@ -137,7 +138,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .render_form_data(false);
 
     // Create a variable to hold the PDF document if it's needed
-    let mut output_pdf = pdfium.create_new_pdf()?;
+    let mut output_pdf = pdfium.create_new_pdf().unwrap();
 
     // ... then iterate through the pages until reaching the end of the shortest document
     for index in 0..min_pages {
@@ -218,15 +219,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
 
+            let image1_x_position_in_points = PdfPoints::new(0 as f32);
+            let image1_y_position_in_points = PdfPoints::new(0 as f32);
+
+
             // Add a page to the output pdf document
             let mut page = output_pdf
                 .pages_mut()
                 .create_page_at_end(paper_size);
 
+            // Check to see if the page is a page, since it was actually wrapped in a result enum
+            if let Ok(mut page) = page {
+                // Add the image to the page
+                //add_image_to_pdf_page(&pdfium, &mut output_pdf, &mut page, &doc1_page_highlighted_image, 0, 0);
+                
+                //Convert the image into the type that is acceptable for writing to the page
+                let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
+                let image1_width = doc1_page_highlighted_image.width().clone();
 
+                let mut object = PdfPageImageObject::new_with_width(
+                    &output_pdf,
+                    &dynamic_image,
+                    PdfPoints::new(image1_width as f32),
+                )?;
+            
+                object.translate(image1_x_position_in_points, image1_y_position_in_points)?;
+            
+                page.objects_mut().add_image_object(object)?;
+            
+            } else {
+                // Handle the error case
+                eprintln!("Error when getting the PDF page");
+            }
 
-
-
+            //let mut doc_path = temp_path.clone();
+            //doc_path.push(format!("output.pdf"));
+            
+            output_pdf.save_to_file("c:\\temp\\output\\myTestPDF.pdf")?;
         }        
 
         /******************************************************
@@ -308,3 +337,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
+// fn add_image_to_pdf_page(
+//     pdfium: &Pdfium,
+//     output_pdf: &mut PdfDocument,
+//     page: &mut PdfPage,
+//     image: &ImageBuffer<image::Rgba<u8>, Vec<u8>>,
+//     x: i32,
+//     y: i32,
+// ) {
+//     let image_width = image.width();
+//     let image_height = image.height();
+
+//     let mut object = PdfPageImageObject::new_with_width(
+//         &output_pdf,
+//         &image,
+//         PdfPoints::new(image_width),
+//     )?;
+
+
+
+
+//     // let image_stream = PdfStream::new(pdfium);
+//     // image_stream.write_image(image);
+
+//     // let image_object = PdfImageObject::new(pdfium, image_stream);
+
+//     // page.add_image(image_object, x, y, image_width, image_height);
+// }

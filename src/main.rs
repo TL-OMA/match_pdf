@@ -212,7 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Create a size for the page that is about to be added
             let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
-            let height = doc1_page_highlighted_image.height() + doc2_page_highlighted_image.height();
+            let height = doc1_page_highlighted_image.height();
 
             let width_in_points = PdfPoints::new(width as f32);
             let height_in_points = PdfPoints::new(height as f32);

@@ -212,7 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Create a size for the page that is about to be added
             let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
-            let height = doc1_page_highlighted_image.height() + doc2_page_highlighted_image.height();
+            let height = doc1_page_highlighted_image.height();
 
             let width_in_points = PdfPoints::new(width as f32);
             let height_in_points = PdfPoints::new(height as f32);
@@ -221,6 +221,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let image1_x_position_in_points = PdfPoints::new(0 as f32);
             let image1_y_position_in_points = PdfPoints::new(0 as f32);
+            let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
+            let image2_y_position_in_points = PdfPoints::new(0 as f32);
 
 
             // Add a page to the output pdf document
@@ -233,19 +235,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Add the image to the page
                 //add_image_to_pdf_page(&pdfium, &mut output_pdf, &mut page, &doc1_page_highlighted_image, 0, 0);
                 
-                //Convert the image into the type that is acceptable for writing to the page
+                // Document 1
+                // Convert the image from document 1 into the type that is acceptable for writing to the page
                 let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
                 let image1_width = doc1_page_highlighted_image.width().clone();
 
+                // Make a PDF document object using the image from document 1
                 let mut object = PdfPageImageObject::new_with_width(
                     &output_pdf,
                     &dynamic_image,
                     PdfPoints::new(image1_width as f32),
                 )?;
             
+                // Describe the placement of the object
                 object.translate(image1_x_position_in_points, image1_y_position_in_points)?;
             
+                // Add the image from document 1 to the destination PDF page.
                 page.objects_mut().add_image_object(object)?;
+
+                // Document 2
+                // Convert the image from document 2 into the type that is acceptable for writing to the page
+                let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_highlighted_image.clone());
+                let image2_width = doc2_page_highlighted_image.width().clone();
+
+                // Make a PDF document object using the image from document 2
+                let mut object2 = PdfPageImageObject::new_with_width(
+                    &output_pdf,
+                    &dynamic_image2,
+                    PdfPoints::new(image2_width as f32),
+                )?;
+            
+                // Describe the placement of the object - put this one on the right side
+                object2.translate(image2_x_position_in_points, image2_y_position_in_points)?;
+            
+                // Add the image from document 2 to the destination PDF page.
+                page.objects_mut().add_image_object(object2)?;
             
             } else {
                 // Handle the error case

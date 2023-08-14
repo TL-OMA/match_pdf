@@ -184,31 +184,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
 
-            
-            // If debug is turned on, write these image files to disk
-            if cli.debug {
-
-                // Create a unique path/filename and write to disk for debugging purposes
-                let mut image_path3 = temp_path.clone();
-                image_path3.push(format!("doc1-page-{}-highlighted.jpg", index));
-
-                doc1_page_highlighted_image.save_with_format( 
-                    image_path3,
-                    image::ImageFormat::Jpeg
-                ) // ... and saves it to a file.
-                .map_err(|_| PdfiumError::ImageError)?;
-
-                // Create a unique path/filename and write to disk for debugging purposes
-                let mut image_path4 = temp_path.clone();
-                image_path4.push(format!("doc2-page-{}-highlighted.jpg", index));
-
-                doc2_page_highlighted_image.save_with_format( 
-                    image_path4,
-                    image::ImageFormat::Jpeg
-                ) // ... and saves it to a file.
-                .map_err(|_| PdfiumError::ImageError)?;
-            }
-
 
             // Create a size for the page that is about to be added
             let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
@@ -221,7 +196,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let image1_x_position_in_points = PdfPoints::new(0 as f32);
             let image1_y_position_in_points = PdfPoints::new(0 as f32);
-            let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
+            let image2_x_position_in_points = PdfPoints::new(width as f32);
             let image2_y_position_in_points = PdfPoints::new(0 as f32);
 
 

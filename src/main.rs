@@ -196,7 +196,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let image1_x_position_in_points = PdfPoints::new(0 as f32);
             let image1_y_position_in_points = PdfPoints::new(0 as f32);
-            let image2_x_position_in_points = PdfPoints::new(width as f32);
+            let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
             let image2_y_position_in_points = PdfPoints::new(0 as f32);
 
 

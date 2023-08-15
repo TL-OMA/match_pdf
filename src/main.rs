@@ -4,7 +4,7 @@ mod common;
 mod images;
 
 use clap::Parser;
-use image::{ImageBuffer, DynamicImage};
+use image::DynamicImage;
 use std::fs;
 use std::path::PathBuf;
 use pdfium_render::prelude::*;
@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Define global variables
     let mut differences_found: bool = false;
-    let mut output_is_set: bool = false;
+    //let mut output_is_set: bool = false;
 
 
     // Parse the command line arguments
@@ -98,10 +98,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
 
     // If the output argument is true, set the global output_is_set var
-    match cli.output {
-        Some(ref value) => output_is_set = true,
-        _ => (), // Do nothing when None occurs.
-    }
+    // match cli.output {
+    //     Some(ref value) => output_is_set = true,
+    //     _ => (), // Do nothing when None occurs.
+    // }
 
 
     // If the config argument was used, evaluate and prep the data
@@ -175,7 +175,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ******************************************************/
 
         // If the user used the 'output' argument
-        if let Some(ref value) = cli.output {
+        if let Some(ref _value) = cli.output {
           
             // Take actions to highlight differences and create an output document
 
@@ -201,7 +201,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
             // Add a page to the output pdf document
-            let mut page = output_pdf
+            let page = output_pdf
                 .pages_mut()
                 .create_page_at_end(paper_size);
 

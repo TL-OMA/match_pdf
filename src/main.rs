@@ -97,6 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
     
 
+
     // If the output argument is true, set the global output_is_set var
     // match cli.output {
     //     Some(ref value) => output_is_set = true,
@@ -254,7 +255,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             //let mut doc_path = temp_path.clone();
             //doc_path.push(format!("output.pdf"));
             
-            output_pdf.save_to_file("c:\\temp\\output\\myTestPDF.pdf")?;
+            //output_pdf.save_to_file("c:\\temp\\output\\myTestPDF.pdf")?;
+            //output_pdf.save_to_file(&cli.output)?;
+
         }        
 
         /******************************************************
@@ -309,8 +312,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     } // End of the for loop iterating through each page of the the shortest pdf document
 
-
     // Clean up, the comparison is over.
+
+    // If the user used the 'output' argument, write the output PDF file to the specified location.
+    if let Some(ref _value) = cli.output {
+
+        if let Some(ref path) = cli.output {
+            output_pdf.save_to_file(path)?;
+        } else {
+            println!("There is an issue with the file path provided as the output.");
+        }
+
+    }
+
 
     if differences_found {
 

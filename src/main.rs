@@ -29,6 +29,10 @@ struct Cli {
     #[arg(short, long)]
     stop: bool,
 
+    /// An optional 'justdiff' flag: In combination with 'output', only different pages are included in output file.
+    #[arg(short, long)]
+    justdiff: bool,
+
     /// An optional 'pages' flag: Stop the comparison after ## pages if a difference was found in the first ## pages.
     #[arg(short, long)]
     pages: Option<i32>,
@@ -52,7 +56,8 @@ struct Cli {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Define global variables
-    let mut differences_found: bool = false;
+    let mut differences_found_in_document: bool = false;
+    let mut differences_found_in_page: bool;
     //let mut output_is_set: bool = false;
 
 
@@ -74,6 +79,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("The 'stop' flag was not set.");
         }
     
+        if cli.justdiff {
+            println!("The 'justdiff' flag was set.  Only different pages will be included in the output file.");
+        } else {
+            println!("The 'justdiff' flag was not set.");
+        }
+
         match cli.pages {
             Some(value) => println!("The 'pages' flag was set with value:  {}", value),
             None => println!("The 'pages' flag was not set."),
@@ -144,6 +155,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ... then iterate through the pages until reaching the end of the shortest document
     for index in 0..min_pages {
 
+        // Reset page differences variable
+        differences_found_in_page = false;
+
         if index % 10 == 0 {
             println!("Processing page {:?}", index);
         }
@@ -160,9 +174,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Compare the images of the two pages
         let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
 
-        // Set the DIFFERENCES_FOUND variable to true if the vector is not empty
+        // Set the differences_found variables to true if the vector is not empty
         if !page_differences_vector.is_empty(){
-            differences_found = true;
+            differences_found_in_document = true;
+            differences_found_in_page = true;
 
             if cli.debug {
                 println!("page_differences_vector for page {:?}: {:?}", index, page_differences_vector);
@@ -175,95 +190,94 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         If a results file is desired, highlight the differences in the images, and add to a results file
         ******************************************************/
 
-        // If the user used the 'output' argument
-        if let Some(ref _value) = cli.output {
+        // If the user used the 'output' argument 
+        if let Some(ref _value) = cli.output{
           
-            // Take actions to highlight differences and create an output document
+            // AND (there are page differences OR justdiff is false)
+            if differences_found_in_page || !cli.justdiff {
 
-            // Highlight the differences within the images
-            let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
+                // Take actions to highlight differences and create an output document
 
-            let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+                // Highlight the differences within the images
+                let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
 
-
-            // Create a size for the page that is about to be added
-            let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
-            let height = doc1_page_highlighted_image.height();
-
-            let width_in_points = PdfPoints::new(width as f32);
-            let height_in_points = PdfPoints::new(height as f32);
-
-            let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
-
-            let image1_x_position_in_points = PdfPoints::new(0 as f32);
-            let image1_y_position_in_points = PdfPoints::new(0 as f32);
-            let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
-            let image2_y_position_in_points = PdfPoints::new(0 as f32);
+                let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
 
 
-            // Add a page to the output pdf document
-            let page = output_pdf
-                .pages_mut()
-                .create_page_at_end(paper_size);
+                // Create a size for the page that is about to be added
+                let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
+                let height = doc1_page_highlighted_image.height();
 
-            // Check to see if the page is a page, since it was actually wrapped in a result enum
-            if let Ok(mut page) = page {
-                // Add the image to the page
-                //add_image_to_pdf_page(&pdfium, &mut output_pdf, &mut page, &doc1_page_highlighted_image, 0, 0);
+                let width_in_points = PdfPoints::new(width as f32);
+                let height_in_points = PdfPoints::new(height as f32);
+
+                let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
+
+                let image1_x_position_in_points = PdfPoints::new(0 as f32);
+                let image1_y_position_in_points = PdfPoints::new(0 as f32);
+                let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
+                let image2_y_position_in_points = PdfPoints::new(0 as f32);
+
+
+                // Add a page to the output pdf document
+                let page = output_pdf
+                    .pages_mut()
+                    .create_page_at_end(paper_size);
+
+                // Check to see if the page is a page, since it was actually wrapped in a result enum
+                if let Ok(mut page) = page {
+                    // Add the image to the page
+                    //add_image_to_pdf_page(&pdfium, &mut output_pdf, &mut page, &doc1_page_highlighted_image, 0, 0);
+                    
+                    // Document 1
+                    // Convert the image from document 1 into the type that is acceptable for writing to the page
+                    let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
+                    let image1_width = doc1_page_highlighted_image.width().clone();
+
+                    // Make a PDF document object using the image from document 1
+                    let mut object = PdfPageImageObject::new_with_width(
+                        &output_pdf,
+                        &dynamic_image,
+                        PdfPoints::new(image1_width as f32),
+                    )?;
                 
-                // Document 1
-                // Convert the image from document 1 into the type that is acceptable for writing to the page
-                let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
-                let image1_width = doc1_page_highlighted_image.width().clone();
+                    // Describe the placement of the object
+                    object.translate(image1_x_position_in_points, image1_y_position_in_points)?;
+                
+                    // Add the image from document 1 to the destination PDF page.
+                    page.objects_mut().add_image_object(object)?;
 
-                // Make a PDF document object using the image from document 1
-                let mut object = PdfPageImageObject::new_with_width(
-                    &output_pdf,
-                    &dynamic_image,
-                    PdfPoints::new(image1_width as f32),
-                )?;
-            
-                // Describe the placement of the object
-                object.translate(image1_x_position_in_points, image1_y_position_in_points)?;
-            
-                // Add the image from document 1 to the destination PDF page.
-                page.objects_mut().add_image_object(object)?;
+                    // Document 2
+                    // Convert the image from document 2 into the type that is acceptable for writing to the page
+                    let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_highlighted_image.clone());
+                    let image2_width = doc2_page_highlighted_image.width().clone();
 
-                // Document 2
-                // Convert the image from document 2 into the type that is acceptable for writing to the page
-                let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_highlighted_image.clone());
-                let image2_width = doc2_page_highlighted_image.width().clone();
+                    // Make a PDF document object using the image from document 2
+                    let mut object2 = PdfPageImageObject::new_with_width(
+                        &output_pdf,
+                        &dynamic_image2,
+                        PdfPoints::new(image2_width as f32),
+                    )?;
+                
+                    // Describe the placement of the object - put this one on the right side
+                    object2.translate(image2_x_position_in_points, image2_y_position_in_points)?;
+                
+                    // Add the image from document 2 to the destination PDF page.
+                    page.objects_mut().add_image_object(object2)?;
+                
+                } else {
+                    // Handle the error case
+                    eprintln!("Error when getting the PDF page");
+                }
 
-                // Make a PDF document object using the image from document 2
-                let mut object2 = PdfPageImageObject::new_with_width(
-                    &output_pdf,
-                    &dynamic_image2,
-                    PdfPoints::new(image2_width as f32),
-                )?;
-            
-                // Describe the placement of the object - put this one on the right side
-                object2.translate(image2_x_position_in_points, image2_y_position_in_points)?;
-            
-                // Add the image from document 2 to the destination PDF page.
-                page.objects_mut().add_image_object(object2)?;
-            
-            } else {
-                // Handle the error case
-                eprintln!("Error when getting the PDF page");
             }
-
-            //let mut doc_path = temp_path.clone();
-            //doc_path.push(format!("output.pdf"));
-            
-            //output_pdf.save_to_file("c:\\temp\\output\\myTestPDF.pdf")?;
-            //output_pdf.save_to_file(&cli.output)?;
 
         }        
 
         /******************************************************
         If stop is true and differences have been found, stop the comparison.
         ******************************************************/
-        if cli.stop && differences_found{
+        if cli.stop && differences_found_in_document{
             
             // Break out of the for loop and finish up
             break;
@@ -326,7 +340,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
 
-    if differences_found {
+    if differences_found_in_document {
 
         println!("Differences were found.")
         

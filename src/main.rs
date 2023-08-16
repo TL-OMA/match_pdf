@@ -362,32 +362,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
 }
-
-
-// fn add_image_to_pdf_page(
-//     pdfium: &Pdfium,
-//     output_pdf: &mut PdfDocument,
-//     page: &mut PdfPage,
-//     image: &ImageBuffer<image::Rgba<u8>, Vec<u8>>,
-//     x: i32,
-//     y: i32,
-// ) {
-//     let image_width = image.width();
-//     let image_height = image.height();
-
-//     let mut object = PdfPageImageObject::new_with_width(
-//         &output_pdf,
-//         &image,
-//         PdfPoints::new(image_width),
-//     )?;
-
-
-
-
-//     // let image_stream = PdfStream::new(pdfium);
-//     // image_stream.write_image(image);
-
-//     // let image_object = PdfImageObject::new(pdfium, image_stream);
-
-//     // page.add_image(image_object, x, y, image_width, image_height);
-// }

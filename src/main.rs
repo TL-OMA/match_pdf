@@ -198,13 +198,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Take actions to highlight differences and create an output document
 
-                // Highlight the differences within the images
-                let doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
+                // Create the highlighted image variables in the current scope
+                let doc1_page_highlighted_image;
+                let doc2_page_highlighted_image;
 
-                let doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+                // Highlight the differences within the images
+                // If differences were found in page
+                if differences_found_in_page {
+
+                    doc1_page_highlighted_image = images::highlight_chunks(&image1, &page_differences_vector);
+
+                    doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
+                
+                } else { // Else there are not differences in this page, so just use the non-highlighted images
+
+                    doc1_page_highlighted_image = image1;
+
+                    doc2_page_highlighted_image = image2;
+                }
 
 
                 // Create a size for the page that is about to be added
+                // Page will be two images wide and one image high
                 let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
                 let height = doc1_page_highlighted_image.height();
 
@@ -213,8 +228,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
 
+                // Place the first image starting in the upper left
                 let image1_x_position_in_points = PdfPoints::new(0 as f32);
                 let image1_y_position_in_points = PdfPoints::new(0 as f32);
+                // Place the second image one image width from the left edge, and at the top
                 let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
                 let image2_y_position_in_points = PdfPoints::new(0 as f32);
 

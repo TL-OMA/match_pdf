@@ -6,7 +6,9 @@ mod images;
 use clap::Parser;
 use image::DynamicImage;
 use std::fs;
+use std::process;
 use std::path::PathBuf;
+use std::path::Path;
 use pdfium_render::prelude::*;
 
 
@@ -107,6 +109,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     } 
     
+
+    // If the user provided an output folder, check it
+    if let Some(ref _value) = cli.output {
+
+        if let Some(ref path) = cli.output {
+            
+            // If the output path provided does not exist, exit now.
+            if ! Path::new(path).exists() {
+                println!("The provided output folder does not exist.");
+                process::exit(1);
+            } 
+        } 
+    }
 
 
     // If the output argument is true, set the global output_is_set var

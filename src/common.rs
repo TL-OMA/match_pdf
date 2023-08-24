@@ -11,7 +11,7 @@ pub fn get_temp_dir(app_name: &str) -> PathBuf {
     let mut path = PathBuf::from(&temp_dir);
 
     let utc: DateTime<Utc> = Utc::now();
-    let timestamp = utc.format("%Y-%m-%d-%H-%M-%S").to_string();
+    let timestamp = utc.format("%Y-%m-%d-%H-%M-%S.%f").to_string();
 
     path.push(format!("{}-{}", app_name, timestamp));
 

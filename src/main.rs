@@ -249,23 +249,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         doc2_page_highlighted_image = image2;
                     }
 
+                    // PDF documents use points as a unit of measurement, and there are 72 points to an inch.
+                    const POINTS_PER_INCH: f32 = 72.0;
 
-                    // Create a size for the page that is about to be added
-                    // Page will be two images wide and one image high
-                    let width = doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width();
-                    let height = doc1_page_highlighted_image.height();
+                    // Desired page size in inches
+                    let desired_width_in_inches = 17.0;  // For example: Letter width
+                    let desired_height_in_inches = 11.0;  // For example: Letter height
 
-                    let width_in_points = PdfPoints::new(width as f32);
-                    let height_in_points = PdfPoints::new(height as f32);
+                    // Calculate the desired size in points
+                    let desired_width_in_points = desired_width_in_inches * POINTS_PER_INCH;
+                    let desired_height_in_points = desired_height_in_inches * POINTS_PER_INCH;
 
-                    let paper_size = PdfPagePaperSize::Custom(width_in_points, height_in_points);
+                    // Calculate the scaling factor based on the desired width
+                    let scale_factor = desired_width_in_points / (doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width()) as f32;
 
-                    // Place the first image starting in the upper left
-                    let image1_x_position_in_points = PdfPoints::new(0 as f32);
-                    let image1_y_position_in_points = PdfPoints::new(0 as f32);
-                    // Place the second image one image width from the left edge, and at the top
-                    let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32);
-                    let image2_y_position_in_points = PdfPoints::new(0 as f32);
+                    // Apply the scaling factor to image sizes and positions
+                    let width = (doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width()) as f32 * scale_factor;
+                    let height = doc1_page_highlighted_image.height() as f32 * scale_factor;
+
+                    let paper_size = PdfPagePaperSize::Custom(PdfPoints::new(width), PdfPoints::new(height));
+
+                    let image1_x_position_in_points = PdfPoints::new(0.0);
+                    let image1_y_position_in_points = PdfPoints::new(0.0);
+                    let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32 * scale_factor);
+                    let image2_y_position_in_points = PdfPoints::new(0.0);
 
 
                     // Add a page to the output pdf document
@@ -281,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Document 1
                         // Convert the image from document 1 into the type that is acceptable for writing to the page
                         let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
-                        let image1_width = doc1_page_highlighted_image.width().clone();
+                        let image1_width = doc1_page_highlighted_image.width() as f32 * scale_factor;
 
                         // Make a PDF document object using the image from document 1
                         let mut object = PdfPageImageObject::new_with_width(
@@ -299,7 +306,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Document 2
                         // Convert the image from document 2 into the type that is acceptable for writing to the page
                         let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_highlighted_image.clone());
-                        let image2_width = doc2_page_highlighted_image.width().clone();
+                        let image2_width = doc2_page_highlighted_image.width() as f32 * scale_factor;
 
                         // Make a PDF document object using the image from document 2
                         let mut object2 = PdfPageImageObject::new_with_width(
@@ -316,7 +323,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     
                     } else {
                         // Handle the error case
-                        eprintln!("Error when getting the PDF page");
+                        println!("Something went wrong when adding a page to the output PDF document.");
                     }
 
                 }

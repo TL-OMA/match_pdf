@@ -183,17 +183,46 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Reset page differences variable
             differences_found_in_page = false;
 
-            if index % 10 == 0 {
-                println!("Processing page {:?}", index);
+            if cli.debug {
+                if index % 10 == 0 {
+                    println!("Processing page {:?}", (index + 1));
+                }
             }
 
-            // Create an image of the current page from document 1
+            // Create the objects for each of the pages to be compared
             let doc1page = pdf_document_1.pages().get(index)?;
+            let doc2page = pdf_document_2.pages().get(index)?;
+
+            // Get the dimensions of the pages
+            let doc1width = doc1page.width();
+            let doc1height = doc1page.height();
+            let doc2width = doc2page.width();
+            let doc2height = doc2page.height();
+
+
+
+            // If the size of the pages id different
+            if (doc1width != doc2width) ||
+                (doc1height != doc2height) {
+
+                if cli.debug {
+                    println!("Page {:?} of the two docs are different sizes.  Ending the comparison.", (index + 1));
+                }
+                
+                differences_found_in_document = true;
+
+                // Break out of the for loop and end this.  Comparing pixels of pages that are different sizes ends badly.
+                break;
+            }
+
+
+            // Create an image of the current page from document 1
             let image1 = images::render_page(&doc1page, &render_config)?;
 
             // Create an image of the current page from document 2
-            let doc2page = pdf_document_2.pages().get(index)?;
             let image2 = images::render_page(&doc2page, &render_config)?;
+
+
 
 
             // Compare the images of the two pages

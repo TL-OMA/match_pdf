@@ -124,13 +124,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
 
-    // If the output argument is true, set the global output_is_set var
-    // match cli.output {
-    //     Some(ref value) => output_is_set = true,
-    //     _ => (), // Do nothing when None occurs.
-    // }
-
-
     // If the config argument was used, evaluate and prep the data
 
 
@@ -283,7 +276,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Check to see if the page is a page, since it was actually wrapped in a result enum
                     if let Ok(mut page) = page {
                         // Add the image to the page
-                        //add_image_to_pdf_page(&pdfium, &mut output_pdf, &mut page, &doc1_page_highlighted_image, 0, 0);
                         
                         // Document 1
                         // Convert the image from document 1 into the type that is acceptable for writing to the page

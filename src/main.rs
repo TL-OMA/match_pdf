@@ -276,11 +276,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     // Desired page size in inches
                     let desired_width_in_inches = 17.0;  // For example: Letter width
-                    let desired_height_in_inches = 11.0;  // For example: Letter height
+                    // let desired_height_in_inches = 11.0;  // For example: Letter height
 
                     // Calculate the desired size in points
                     let desired_width_in_points = desired_width_in_inches * POINTS_PER_INCH;
-                    let desired_height_in_points = desired_height_in_inches * POINTS_PER_INCH;
+                    // let desired_height_in_points = desired_height_in_inches * POINTS_PER_INCH;
 
                     // Calculate the scaling factor based on the desired width
                     let scale_factor = desired_width_in_points / (doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width()) as f32;

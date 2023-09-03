@@ -9,4 +9,4 @@ edition = "2021"
 chrono = "0.4.26"
 clap = { version = "4.3.11", features = ["derive"] }
 image = "0.24.6"
-pdfium-render = "0.8.6"
+pdfium-render = "0.8.8"

@@ -10,6 +10,7 @@ use std::process;
 use std::path::PathBuf;
 use std::path::Path;
 use pdfium_render::prelude::*;
+use serde::{Deserialize, Serialize};
 
 
 // Define and collect arguments
@@ -103,7 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     
         match cli.config {
-            Some(value) => println!("The 'config' flag was set with value:  {}", value.to_string_lossy()),
+            Some(ref value) => println!("The 'config' flag was set with value:  {}", value.to_string_lossy()),
             None => println!("The 'config' flag was not set."),
         }
     
@@ -125,8 +126,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     // If the config argument was used, evaluate and prep the data
+    if let Some(ref _value) = cli.config {
 
-
+        if let Some(ref path) = cli.config {
+            
+            // If the config path does not exist, exit now.
+            if ! Path::new(path).exists() {
+                println!("The provided config file does not exist.");
+                process::exit(1);
+            } 
+        } 
+    }
 
 
     // Define a temp folder to use based on the system temp folder

@@ -25,11 +25,19 @@ pub fn compare_images_in_chunks(img1: &ImageBuffer<image::Rgba<u8>, Vec<u8>>, im
     // Assumes both images have same dimensions
     let (width, height) = img1.dimensions();
 
+    // Iterate from top to bottom, starting with y = 0, through the entire image, chunk by chunk
     for y in (0..height).step_by(chunk_size) {
+        // Iterate from left to right, starting with x = 0, through the entire image, chunk by chunk
         for x in (0..width).step_by(chunk_size) {
             let mut chunks_differ = false;
 
+            
+            //
+            //  Compare a chunk
+            //
+            // Within a chunk, iterate pixel by pixel, top to bottom
             for dy in 0..chunk_size {
+                // Within a chunk, iterate, pixel by pixel, left to right
                 for dx in 0..chunk_size {
                     // Don't try to access a pixel that is out of the image's bounds
                     if x + (dx as u32) >= width || y + (dy as u32) >= height {

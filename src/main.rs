@@ -257,6 +257,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Reset page differences variable
             differences_found_in_page = false;
 
+            // Create a page differences vector variable at this scope level
+            let page_differences_vector;
+
             if cli.debug {
                 if index % 10 == 0 {
                     println!("Processing page {:?}", (index + 1));
@@ -299,25 +302,73 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Create a vector variable that will be passed into compare_images_in_chunks
             // This may be empty if there are no rectangles to ignore for this page
-            let mut current_page_rectangles_to_ignore;
+            let current_page_rectangles_to_ignore;
             
             // Define the current page number (index is base zero)
             let page_val = index + 1;
 
-            // 
+            // If there is a valid config json
             if let Some(temporary_config_json) = &config_json {
                 
+                // Check to see if there are rectangles that need to be ignored in this page
                 current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
 
-                //
-                // Maybe call compare_images_in_chunks here with the defined rectangles
-                //
+                println!("current_page_rectangles_to_ignore for page {:?}", page_val.to_string());
+                println!("{:?}", current_page_rectangles_to_ignore);
+
+                // If there are rectangles that need to be ignored in this page
+                if !current_page_rectangles_to_ignore.is_empty(){
+                    
+                    // Compare the images of the two pages, sending in ignored areas
+                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+
+                    // Set the differences_found variables to true if the vector is not empty
+                    if !page_differences_vector.is_empty(){
+                        differences_found_in_document = true;
+                        differences_found_in_page = true;
+
+                        if cli.debug {
+                            println!("page_differences_vector for page {:?}: {:?}", page_val, page_differences_vector);
+                        }
+
+                    }
 
 
-            } else {
+                } else { // There was a valid config JSON, but it did not contain ignored rectangles for this page
 
-                //
-                // Then call compare_images_in_chunks here with some empty vector?
+                    // Compare the images of the two pages, sending null for ignored rectangles
+                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+
+                    // Set the differences_found variables to true if the vector is not empty
+                    if !page_differences_vector.is_empty(){
+                        differences_found_in_document = true;
+                        differences_found_in_page = true;
+
+                        if cli.debug {
+                            println!("page_differences_vector for page {:?}: {:?}", page_val, page_differences_vector);
+                        }
+
+                    }
+
+
+                }
+
+
+            } else {  // There was not valid config json, so don't worry about ignored rectangles - don't ignore anything.
+
+                // Compare the images of the two pages, sending null for ignored rectangles
+                page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+
+                // Set the differences_found variables to true if the vector is not empty
+                if !page_differences_vector.is_empty(){
+                    differences_found_in_document = true;
+                    differences_found_in_page = true;
+
+                    if cli.debug {
+                        println!("page_differences_vector for page {:?}: {:?}", page_val, page_differences_vector);
+                    }
+
+                }
 
                 if cli.debug{    
                     println!("Config JSON is not initialized.");
@@ -326,19 +377,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 
-            // Compare the images of the two pages
-            let page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
-
-            // Set the differences_found variables to true if the vector is not empty
-            if !page_differences_vector.is_empty(){
-                differences_found_in_document = true;
-                differences_found_in_page = true;
-
-                if cli.debug {
-                    println!("page_differences_vector for page {:?}: {:?}", index, page_differences_vector);
-                }
-
-            }
 
 
             /******************************************************

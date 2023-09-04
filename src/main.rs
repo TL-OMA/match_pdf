@@ -154,12 +154,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Consume the contents of the json file, placing them into the previously defined JSON object
             // Read the file to a string
-            let mut file = File::open(path).expect("Failed to open config.json");
+            let mut file = File::open(path).expect("Failed to open the specified config file.");
             let mut content = String::new();
-            file.read_to_string(&mut content).expect("Failed to read config.json");
+            file.read_to_string(&mut content).expect("Failed to read the specified config file.");
 
             // Deserialize the JSON content to the Config struct
-            let config: Config = serde_json::from_str(&content).expect("Failed to deserialize JSON");
+            let config: Config = serde_json::from_str(&content).expect("Failed to deserialize JSON within the specified config file.");
             
             println!("{:?}", config);
 

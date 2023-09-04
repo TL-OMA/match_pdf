@@ -70,6 +70,42 @@ pub struct Config {
     pub ignored_rectangles: Vec<Rectangle>,
 }
 
+impl Config {
+    // This method returns a Vec of matching rectangles for a given page value
+    pub fn get_matching_rectangles(&self, page: &str) -> Vec<&Rectangle> {
+        let mut matching_rects = Vec::new();
+
+        for rect in &self.ignored_rectangles {
+            match rect.page.as_str() {
+                "all" => matching_rects.push(rect),
+                "even" => {
+                    if let Ok(page_num) = page.parse::<i32>() {
+                        if page_num % 2 == 0 {
+                            matching_rects.push(rect);
+                        }
+                    }
+                },
+                "odd" => {
+                    if let Ok(page_num) = page.parse::<i32>() {
+                        if page_num % 2 == 1 {
+                            matching_rects.push(rect);
+                        }
+                    }
+                },
+                page_val => {
+                    if page == page_val {
+                        matching_rects.push(rect);
+                    }
+                }
+            }
+        }
+
+        matching_rects
+    }
+}
+
+
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
@@ -77,6 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut differences_found_in_document: bool = false;
     let mut differences_found_in_page: bool;
     let mut differences_in_number_of_pages: bool = false;
+    let mut config_json: Option<Config> = None;
 
 
     // Parse the command line arguments
@@ -158,9 +195,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             file.read_to_string(&mut content).expect("Failed to read the specified config file.");
 
             // Deserialize the JSON content to the Config struct
-            let config: Config = serde_json::from_str(&content).expect("Failed to deserialize JSON within the specified config file.");
+            config_json = Some(serde_json::from_str(&content).expect("Failed to deserialize JSON"));
             
-            println!("{:?}", config);
+            println!("{:?}", config_json);
 
         } 
     }
@@ -259,6 +296,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Create an image of the current page from document 2
             let image2 = images::render_page(&doc2page, &render_config)?;
 
+
+            // Create a vector variable that will be passed into compare_images_in_chunks
+            // This may be empty if there are no rectangles to ignore for this page
+            let mut current_page_rectangles_to_ignore;
+            
+            // Define the current page number (index is base zero)
+            let page_val = index + 1;
+
+            // 
+            if let Some(temporary_config_json) = &config_json {
+                
+                current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+
+                //
+                // Maybe call compare_images_in_chunks here with the defined rectangles
+                //
+
+
+            } else {
+
+                //
+                // Then call compare_images_in_chunks here with some empty vector?
+
+                if cli.debug{    
+                    println!("Config JSON is not initialized.");
+                }
+            }
 
 
 

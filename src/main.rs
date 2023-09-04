@@ -6,6 +6,8 @@ mod images;
 use clap::Parser;
 use image::DynamicImage;
 use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::process;
 use std::path::PathBuf;
 use std::path::Path;
@@ -62,6 +64,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut differences_found_in_document: bool = false;
     let mut differences_found_in_page: bool;
     let mut differences_in_number_of_pages: bool = false;
+
+
+    // Define the structure that will be used for excluded rectangles if a config file is specified
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct Rectangle {
+        pub page: String,
+        pub top_left: [i32; 2],
+        pub bottom_right: [i32; 2],
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct Config {
+        pub ignored_rectangles: Vec<Rectangle>,
+    }
 
 
     // Parse the command line arguments
@@ -135,6 +151,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("The provided config file does not exist.");
                 process::exit(1);
             } 
+
+            // Consume the contents of the json file, placing them into the previously defined JSON object
+            // Read the file to a string
+            let mut file = File::open(path).expect("Failed to open config.json");
+            let mut content = String::new();
+            file.read_to_string(&mut content).expect("Failed to read config.json");
+
+            // Deserialize the JSON content to the Config struct
+            let config: Config = serde_json::from_str(&content).expect("Failed to deserialize JSON");
+            
+            println!("{:?}", config);
+
         } 
     }
 

@@ -57,6 +57,19 @@ struct Cli {
 }
 
 
+// Define the structure that will be used for excluded rectangles if a config file is specified
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Rectangle {
+    pub page: String,
+    pub top_left: [i32; 2],
+    pub bottom_right: [i32; 2],
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    pub ignored_rectangles: Vec<Rectangle>,
+}
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
@@ -64,20 +77,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut differences_found_in_document: bool = false;
     let mut differences_found_in_page: bool;
     let mut differences_in_number_of_pages: bool = false;
-
-
-    // Define the structure that will be used for excluded rectangles if a config file is specified
-    #[derive(Debug, Deserialize, Serialize)]
-    pub struct Rectangle {
-        pub page: String,
-        pub top_left: [i32; 2],
-        pub bottom_right: [i32; 2],
-    }
-
-    #[derive(Debug, Deserialize, Serialize)]
-    pub struct Config {
-        pub ignored_rectangles: Vec<Rectangle>,
-    }
 
 
     // Parse the command line arguments

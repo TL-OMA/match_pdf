@@ -58,12 +58,36 @@ struct Cli {
 
 
 // Define the structure that will be used for excluded rectangles if a config file is specified
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Rectangle {
     pub page: String,
     pub top_left: [i32; 2],
     pub bottom_right: [i32; 2],
 }
+
+impl Rectangle {
+
+    pub fn overlaps(&self, x: u32, y: u32, chunk_size: u32) -> bool {
+        let chunk_bottom_right_x = x + chunk_size;
+        let chunk_bottom_right_y = y + chunk_size;
+        
+        let condition1 = (self.bottom_right[0] as u32) < x;
+        let condition2 = (self.top_left[0] as u32) > chunk_bottom_right_x;
+        let condition3 = (self.bottom_right[1] as u32) < y;
+        let condition4 = (self.top_left[1] as u32) > chunk_bottom_right_y;
+
+        !(condition1 || condition2 || condition3 || condition4)
+    }
+
+    // Check if the point (x, y) lies inside this rectangle.
+    pub fn contains(&self, x: u32, y: u32) -> bool {
+        x >= self.top_left[0] as u32 &&
+        x <= self.bottom_right[0] as u32 &&
+        y >= self.top_left[1] as u32 &&
+        y <= self.bottom_right[1] as u32
+    }
+}
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -72,34 +96,34 @@ pub struct Config {
 
 impl Config {
     // This method returns a Vec of matching rectangles for a given page value
-    pub fn get_matching_rectangles(&self, page: &str) -> Vec<&Rectangle> {
+    pub fn get_matching_rectangles(&self, page: &str) -> Vec<Rectangle> {
         let mut matching_rects = Vec::new();
-
+    
         for rect in &self.ignored_rectangles {
             match rect.page.as_str() {
-                "all" => matching_rects.push(rect),
+                "all" => matching_rects.push(rect.clone()),
                 "even" => {
                     if let Ok(page_num) = page.parse::<i32>() {
                         if page_num % 2 == 0 {
-                            matching_rects.push(rect);
+                            matching_rects.push(rect.clone());
                         }
                     }
                 },
                 "odd" => {
                     if let Ok(page_num) = page.parse::<i32>() {
                         if page_num % 2 == 1 {
-                            matching_rects.push(rect);
+                            matching_rects.push(rect.clone());
                         }
                     }
                 },
                 page_val => {
                     if page == page_val {
-                        matching_rects.push(rect);
+                        matching_rects.push(rect.clone());
                     }
                 }
             }
         }
-
+    
         matching_rects
     }
 }
@@ -320,7 +344,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if !current_page_rectangles_to_ignore.is_empty(){
                     
                     // Compare the images of the two pages, sending in ignored areas
-                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2, Some(&current_page_rectangles_to_ignore));
 
                     // Set the differences_found variables to true if the vector is not empty
                     if !page_differences_vector.is_empty(){
@@ -337,7 +361,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else { // There was a valid config JSON, but it did not contain ignored rectangles for this page
 
                     // Compare the images of the two pages, sending null for ignored rectangles
-                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+                    page_differences_vector = images::compare_images_in_chunks(&image1, &image2, None);
 
                     // Set the differences_found variables to true if the vector is not empty
                     if !page_differences_vector.is_empty(){
@@ -357,7 +381,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {  // There was not valid config json, so don't worry about ignored rectangles - don't ignore anything.
 
                 // Compare the images of the two pages, sending null for ignored rectangles
-                page_differences_vector = images::compare_images_in_chunks(&image1, &image2);
+                page_differences_vector = images::compare_images_in_chunks(&image1, &image2, None);
 
                 // Set the differences_found variables to true if the vector is not empty
                 if !page_differences_vector.is_empty(){

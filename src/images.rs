@@ -3,6 +3,8 @@
 use pdfium_render::prelude::*;
 use image::RgbaImage;
 use image::{ImageBuffer, Rgba};
+// Use the Rectangle struct in main.rs
+use crate::Rectangle;
 
 
 /// Given a pdf document object (loaded pdf) and page number, return an image of the page
@@ -17,47 +19,83 @@ pub fn render_page(page: &PdfPage, render_config: &PdfRenderConfig) -> Result<Rg
 }
 
 
-/// Compare two images, tracking chunks to make the later highlighting easier
-pub fn compare_images_in_chunks(img1: &ImageBuffer<image::Rgba<u8>, Vec<u8>>, img2: &ImageBuffer<image::Rgba<u8>, Vec<u8>>) -> Vec<(u32, u32)> {
+pub fn compare_images_in_chunks(
+    img1: &ImageBuffer<Rgba<u8>, Vec<u8>>,
+    img2: &ImageBuffer<Rgba<u8>, Vec<u8>>,
+    ignore_rects: Option<&Vec<Rectangle>>,
+) -> Vec<(u32, u32)> {
     let chunk_size = 10;
     let mut differing_chunks = vec![];
 
-    // Assumes both images have same dimensions
     let (width, height) = img1.dimensions();
 
-    // Iterate from top to bottom, starting with y = 0, through the entire image, chunk by chunk
+    // Iterate through each chunk in the images.
     for y in (0..height).step_by(chunk_size) {
-        // Iterate from left to right, starting with x = 0, through the entire image, chunk by chunk
         for x in (0..width).step_by(chunk_size) {
+            
+            // Flags to keep track of chunk status relative to ignore rectangles.
+            let mut is_chunk_ignored = false; // Completely inside ignore rectangle?
+            let mut is_chunk_partial = false; // Partially overlaps with ignore rectangle?
+
+            // Check if the current chunk overlaps or is inside any of the ignore rectangles.
+            if let Some(rects) = ignore_rects {
+                for rect in rects.iter() {
+                    if rect.overlaps(x, y, chunk_size as u32) {
+                        if rect.contains(x, y) && rect.contains(x + chunk_size as u32, y + chunk_size as u32) {
+                            is_chunk_ignored = true;
+                            break;
+                        } else {
+                            is_chunk_partial = true;
+                        }
+                    }
+                }
+            }
+
+            // If the chunk is fully inside an ignore rectangle, move to the next chunk.
+            if is_chunk_ignored {
+                continue;
+            }
+
             let mut chunks_differ = false;
 
-            
-            //
-            //  Compare a chunk
-            //
-            // Within a chunk, iterate pixel by pixel, top to bottom
+            // Compare each pixel inside the chunk.
             for dy in 0..chunk_size {
-                // Within a chunk, iterate, pixel by pixel, left to right
                 for dx in 0..chunk_size {
-                    // Don't try to access a pixel that is out of the image's bounds
-                    if x + (dx as u32) >= width || y + (dy as u32) >= height {
-                    //if x + dx >= width || y + dy >= height {
+                    let actual_x = x + (dx as u32);
+                    let actual_y = y + (dy as u32);
+
+                    // Ensure the pixel coordinates are within image dimensions.
+                    if actual_x >= width || actual_y >= height {
                         continue;
                     }
 
-                    let img1_pixel = img1.get_pixel(x + (dx as u32), y + (dy as u32));
-                    let img2_pixel = img2.get_pixel(x + (dx as u32), y + (dy as u32));
+                    // For chunks that partially overlap with ignore rectangles, 
+                    // skip pixels that are inside those rectangles.
+                    if is_chunk_partial {
+                        if let Some(rects) = ignore_rects {
+                            if rects.iter().any(|rect| rect.contains(actual_x, actual_y)) {
+                                continue;
+                            }
+                        }
+                    }
 
+                    // Get pixels from both images.
+                    let img1_pixel = img1.get_pixel(actual_x, actual_y);
+                    let img2_pixel = img2.get_pixel(actual_x, actual_y);
+
+                    // If a differing pixel is found, mark the chunk as different and break.
                     if img1_pixel != img2_pixel {
                         chunks_differ = true;
                         break;
                     }
                 }
+
                 if chunks_differ {
                     break;
                 }
             }
 
+            // If the chunk contains differing pixels, add it to the result list.
             if chunks_differ {
                 differing_chunks.push((x, y));
             }

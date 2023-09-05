@@ -199,9 +199,20 @@ pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_re
 fn set_pixel_red(image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, x: i32, y: i32) {
     // Check if the given coordinates are within the image boundaries
     if x >= 0 && x < image.width() as i32 && y >= 0 && y < image.height() as i32 {
-        let pixel = image.get_pixel_mut(x as u32, y as u32);
-        pixel[0] = 255;  // Set the Red channel
-        pixel[1] = 0;    // Set the Green channel
-        pixel[2] = 0;    // Set the Blue channel
+
+        // Set every other pixel one color, then the others a different color
+        if (x + y) % 2 == 0 {
+            let pixel = image.get_pixel_mut(x as u32, y as u32);
+            pixel[0] = 255;  // Set the Red channel
+            pixel[1] = 0;    // Set the Green channel
+            pixel[2] = 0;    // Set the Blue channel
+        
+        } else {
+            let pixel = image.get_pixel_mut(x as u32, y as u32);
+            pixel[0] = 0;  // Set the Red channel
+            pixel[1] = 0;    // Set the Green channel
+            pixel[2] = 0;    // Set the Blue channel
+        }
+        
     }
 }

@@ -278,7 +278,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // ... then iterate through the pages until reaching the end of the shortest document
         for index in 0..doc1_pages {
 
-            // Reset page differences variable
+            // Reset variables
             differences_found_in_page = false;
 
             // Create a page differences vector variable at this scope level
@@ -326,7 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Create a vector variable that will be passed into compare_images_in_chunks
             // This may be empty if there are no rectangles to ignore for this page
-            let current_page_rectangles_to_ignore;
+            let mut current_page_rectangles_to_ignore;
             
             // Define the current page number (index is base zero)
             let page_val = index + 1;
@@ -342,7 +342,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // If there are rectangles that need to be ignored in this page
                 if !current_page_rectangles_to_ignore.is_empty(){
-                    
+
                     // Compare the images of the two pages, sending in ignored areas
                     page_differences_vector = images::compare_images_in_chunks(&image1, &image2, Some(&current_page_rectangles_to_ignore));
 
@@ -418,6 +418,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Create the highlighted image variables in the current scope
                     let doc1_page_highlighted_image;
                     let doc2_page_highlighted_image;
+                    let doc1_page_completed_image;
+                    let doc2_page_completed_image;
 
                     // Highlight the differences within the images
                     // If differences were found in page
@@ -427,11 +429,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         doc2_page_highlighted_image = images::highlight_chunks(&image2, &page_differences_vector);
                     
+                        // Check for rectangles that were ignored - and draw them
+                        if let Some(temporary_config_json) = &config_json {
+                            
+                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+
+                            // If there are rectangles that were ignored on this page
+                            if !current_page_rectangles_to_ignore.is_empty(){
+
+                                // Draw them
+                                doc1_page_completed_image = images::draw_ignored_rectangles(&doc1_page_highlighted_image, Some(&current_page_rectangles_to_ignore));
+                                doc2_page_completed_image = images::draw_ignored_rectangles(&doc2_page_highlighted_image, Some(&current_page_rectangles_to_ignore));
+                            
+                            } else { // Else the highlighted image is the completed image
+
+                                doc1_page_completed_image = doc1_page_highlighted_image;
+                                doc2_page_completed_image = doc2_page_highlighted_image;
+
+                            }
+
+                        } else { // There was a valid config JSON, but it did not contain ignored rectangles for this page
+
+                            // Make the highlighted images the completed images
+                            doc1_page_completed_image = doc1_page_highlighted_image;
+                            doc2_page_completed_image = doc2_page_highlighted_image;
+
+                        }
+
                     } else { // Else there are not differences in this page, so just use the non-highlighted images
 
-                        doc1_page_highlighted_image = image1;
+                        doc1_page_completed_image = image1;
 
-                        doc2_page_highlighted_image = image2;
+                        doc2_page_completed_image = image2;
                     }
 
                     // PDF documents use points as a unit of measurement, and there are 72 points to an inch.
@@ -446,17 +475,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // let desired_height_in_points = desired_height_in_inches * POINTS_PER_INCH;
 
                     // Calculate the scaling factor based on the desired width
-                    let scale_factor = desired_width_in_points / (doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width()) as f32;
+                    let scale_factor = desired_width_in_points / (doc1_page_completed_image.width() + doc2_page_completed_image.width()) as f32;
 
                     // Apply the scaling factor to image sizes and positions
-                    let width = (doc1_page_highlighted_image.width() + doc2_page_highlighted_image.width()) as f32 * scale_factor;
-                    let height = doc1_page_highlighted_image.height() as f32 * scale_factor;
+                    let width = (doc1_page_completed_image.width() + doc2_page_completed_image.width()) as f32 * scale_factor;
+                    let height = doc1_page_completed_image.height() as f32 * scale_factor;
 
                     let paper_size = PdfPagePaperSize::Custom(PdfPoints::new(width), PdfPoints::new(height));
 
                     let image1_x_position_in_points = PdfPoints::new(0.0);
                     let image1_y_position_in_points = PdfPoints::new(0.0);
-                    let image2_x_position_in_points = PdfPoints::new(doc1_page_highlighted_image.width() as f32 * scale_factor);
+                    let image2_x_position_in_points = PdfPoints::new(doc1_page_completed_image.width() as f32 * scale_factor);
                     let image2_y_position_in_points = PdfPoints::new(0.0);
 
 
@@ -471,8 +500,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         
                         // Document 1
                         // Convert the image from document 1 into the type that is acceptable for writing to the page
-                        let dynamic_image = DynamicImage::ImageRgba8(doc1_page_highlighted_image.clone());
-                        let image1_width = doc1_page_highlighted_image.width() as f32 * scale_factor;
+                        let dynamic_image = DynamicImage::ImageRgba8(doc1_page_completed_image.clone());
+                        let image1_width = doc1_page_completed_image.width() as f32 * scale_factor;
 
                         // Make a PDF document object using the image from document 1
                         let mut object = PdfPageImageObject::new_with_width(
@@ -489,8 +518,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         // Document 2
                         // Convert the image from document 2 into the type that is acceptable for writing to the page
-                        let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_highlighted_image.clone());
-                        let image2_width = doc2_page_highlighted_image.width() as f32 * scale_factor;
+                        let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_completed_image.clone());
+                        let image2_width = doc2_page_completed_image.width() as f32 * scale_factor;
 
                         // Make a PDF document object using the image from document 2
                         let mut object2 = PdfPageImageObject::new_with_width(

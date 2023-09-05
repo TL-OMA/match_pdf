@@ -151,3 +151,57 @@ pub fn highlight_chunks(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, chunks: &[(u32, 
 
     new_image
 }
+
+
+// Draw the ignored rectangles on the image
+pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_rects: Option<&Vec<Rectangle>>) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+    let mut new_image = image.clone();
+    
+    // Check if rectangles are provided
+    if let Some(rectangles) = ignore_rects {
+        // Iterate over each rectangle
+        for rect in rectangles {
+            let top_left = rect.top_left;
+            let bottom_right = rect.bottom_right;
+
+            // Draw the top and bottom borders of the rectangle:
+            // Loop from the leftmost to the rightmost x-coordinate of the rectangle.
+            for x in top_left[0]..=bottom_right[0] {
+                // Make sure we're not going out of the image's width boundaries
+                if x >= 0 && x < new_image.width() as i32 {
+                    // Set the top border's pixel to red
+                    set_pixel_red(&mut new_image, x, top_left[1]);
+                    // Set the bottom border's pixel to red
+                    set_pixel_red(&mut new_image, x, bottom_right[1]);
+                }
+            }
+
+            // Draw the left and right borders of the rectangle:
+            // Loop from the top to the bottom y-coordinate of the rectangle, excluding the corners.
+            for y in (top_left[1] + 1)..bottom_right[1] {
+                // Make sure we're not going out of the image's height boundaries
+                if y >= 0 && y < new_image.height() as i32 {
+                    // Set the left border's pixel to red
+                    set_pixel_red(&mut new_image, top_left[0], y);
+                    // Set the right border's pixel to red
+                    set_pixel_red(&mut new_image, bottom_right[0], y);
+                }
+            }
+        }
+    }
+
+    // Return the modified image
+    new_image
+}
+
+
+// Helper function to set a specific pixel's color
+fn set_pixel_red(image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, x: i32, y: i32) {
+    // Check if the given coordinates are within the image boundaries
+    if x >= 0 && x < image.width() as i32 && y >= 0 && y < image.height() as i32 {
+        let pixel = image.get_pixel_mut(x as u32, y as u32);
+        pixel[0] = 255;  // Set the Red channel
+        pixel[1] = 0;    // Set the Green channel
+        pixel[2] = 0;    // Set the Blue channel
+    }
+}

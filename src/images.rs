@@ -169,10 +169,10 @@ pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_re
             for x in top_left[0]..=bottom_right[0] {
                 // Make sure we're not going out of the image's width boundaries
                 if x >= 0 && x < new_image.width() as i32 {
-                    // Set the top border's pixel to red
-                    set_pixel_red(&mut new_image, x, top_left[1]);
-                    // Set the bottom border's pixel to red
-                    set_pixel_red(&mut new_image, x, bottom_right[1]);
+                    // Set the top border's pixel color
+                    set_ignored_pixel_border_color(&mut new_image, x, top_left[1]);
+                    // Set the bottom border's pixel color
+                    set_ignored_pixel_border_color(&mut new_image, x, bottom_right[1]);
                 }
             }
 
@@ -181,10 +181,10 @@ pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_re
             for y in (top_left[1] + 1)..bottom_right[1] {
                 // Make sure we're not going out of the image's height boundaries
                 if y >= 0 && y < new_image.height() as i32 {
-                    // Set the left border's pixel to red
-                    set_pixel_red(&mut new_image, top_left[0], y);
-                    // Set the right border's pixel to red
-                    set_pixel_red(&mut new_image, bottom_right[0], y);
+                    // Set the left border's pixel color
+                    set_ignored_pixel_border_color(&mut new_image, top_left[0], y);
+                    // Set the right border's pixel color
+                    set_ignored_pixel_border_color(&mut new_image, bottom_right[0], y);
                 }
             }
         }
@@ -196,7 +196,7 @@ pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_re
 
 
 // Helper function to set a specific pixel's color
-fn set_pixel_red(image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, x: i32, y: i32) {
+fn set_ignored_pixel_border_color(image: &mut ImageBuffer<Rgba<u8>, Vec<u8>>, x: i32, y: i32) {
     // Check if the given coordinates are within the image boundaries
     if x >= 0 && x < image.width() as i32 && y >= 0 && y < image.height() as i32 {
 

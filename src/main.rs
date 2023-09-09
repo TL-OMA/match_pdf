@@ -187,17 +187,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
     
 
-    // If the user provided an output folder, check it
-    if let Some(ref _value) = cli.output {
-
-        if let Some(ref path) = cli.output {
-            
-            // If the output path provided does not exist, exit now.
-            if ! Path::new(path).exists() {
+    // If the user provided an output file, check to see if the included folder exists
+    if let Some(ref path) = cli.output {
+        // Extract the parent directory of the provided path
+        if let Some(parent_dir) = Path::new(path).parent() {
+            // If the parent directory does not exist, exit now.
+            if ! parent_dir.exists() {
                 println!("The provided output folder does not exist.");
                 process::exit(1);
-            } 
-        } 
+            }
+        } else {
+            println!("Invalid output path provided.");
+            process::exit(1);
+        }
     }
 
 

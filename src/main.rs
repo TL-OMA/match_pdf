@@ -5,6 +5,7 @@ mod images;
 
 use clap::Parser;
 use image::DynamicImage;
+use image::{Rgba, RgbaImage};
 use std::fs;
 use std::fs::File;
 use std::io::Read;
@@ -464,6 +465,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         doc2_page_completed_image = image2;
                     }
 
+
+                    // Create a single image that contains both highlighted images, as well as a separator
+                    let total_width = doc1_page_completed_image.width() + doc2_page_completed_image.width() + 1;
+                    let total_height = doc1_page_completed_image.height(); // assuming both images have the same height
+                    let mut combined_image = RgbaImage::new(total_width, total_height);
+
+                    // Copy the first image into the new image
+                    image::imageops::replace(&mut combined_image, &doc1_page_completed_image, 0, 0);
+
+                    // Draw the black line
+                    for y in 0..total_height {
+                        combined_image.put_pixel(doc1_page_completed_image.width(), y, Rgba([0, 0, 0, 255]));
+                    }
+
+                    // Copy the second image next to the black line
+                    image::imageops::replace(&mut combined_image, &doc2_page_completed_image, doc1_page_completed_image.width() as i64 + 1, 0);
+
+
                     ///////
                     // Begin creating the page that will be added to the output PDF
                     ///////
@@ -478,67 +497,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let desired_width_in_points = desired_width_in_inches * POINTS_PER_INCH;
 
                     // Calculate the scaling factor based on the desired width
-                    let scale_factor = desired_width_in_points / (doc1_page_completed_image.width() + doc2_page_completed_image.width()) as f32;
+                    let scale_factor = desired_width_in_points / combined_image.width() as f32;
 
                     // Apply the scaling factor to image sizes and positions
-                    let width = (doc1_page_completed_image.width() + doc2_page_completed_image.width()) as f32 * scale_factor;
-                    let height = doc1_page_completed_image.height() as f32 * scale_factor;
-
+                    let width = combined_image.width() as f32 * scale_factor;
+                    let height = combined_image.height() as f32 * scale_factor;
+                    
                     let paper_size = PdfPagePaperSize::Custom(PdfPoints::new(width), PdfPoints::new(height));
 
-                    let image1_x_position_in_points = PdfPoints::new(0.0);
-                    let image1_y_position_in_points = PdfPoints::new(0.0);
-                    let image2_x_position_in_points = PdfPoints::new(doc1_page_completed_image.width() as f32 * scale_factor);
-                    let image2_y_position_in_points = PdfPoints::new(0.0);
+                    let image_x_position_in_points = PdfPoints::new(0.0);
+                    let image_y_position_in_points = PdfPoints::new(0.0);
 
 
                     // Add a page to the output pdf document
-                    let page = output_pdf
-                        .pages_mut()
-                        .create_page_at_end(paper_size);
+                    let page = output_pdf.pages_mut().create_page_at_end(paper_size);
 
                     // Check to see if the page is a page, since it was actually wrapped in a result enum
                     if let Ok(mut page) = page {
-                        // Add the image to the page
-                        
-                        // Document 1
-                        // Convert the image from document 1 into the type that is acceptable for writing to the page
-                        let dynamic_image = DynamicImage::ImageRgba8(doc1_page_completed_image.clone());
-                        let image1_width = doc1_page_completed_image.width() as f32 * scale_factor;
 
-                        // Make a PDF document object using the image from document 1
+                        // Get the combined image width
+                        let combined_image_width = combined_image.width() as f32 * scale_factor;
+
+                        // Convert the combined image into the type acceptable for writing to the page
+                        let dynamic_combined_image = DynamicImage::ImageRgba8(combined_image);
+
+                        // Make a PDF document object using the combined image
                         let mut object = PdfPageImageObject::new_with_width(
                             &output_pdf,
-                            &dynamic_image,
-                            PdfPoints::new(image1_width as f32),
+                            &dynamic_combined_image,
+                            PdfPoints::new(combined_image_width),
                         )?;
-                    
-                        // Describe the placement of the object
-                        object.translate(image1_x_position_in_points, image1_y_position_in_points)?;
-                    
-                        // Add the image from document 1 to the destination PDF page.
+
+                        // Describe the placement of the object (start from 0,0 as it's a single image)
+                        object.translate(image_x_position_in_points, image_y_position_in_points)?;
+
+                        // Add the combined image to the destination PDF page.
                         page.objects_mut().add_image_object(object)?;
 
-                        // Document 2
-                        // Convert the image from document 2 into the type that is acceptable for writing to the page
-                        let dynamic_image2 = DynamicImage::ImageRgba8(doc2_page_completed_image.clone());
-                        let image2_width = doc2_page_completed_image.width() as f32 * scale_factor;
-
-                        // Make a PDF document object using the image from document 2
-                        let mut object2 = PdfPageImageObject::new_with_width(
-                            &output_pdf,
-                            &dynamic_image2,
-                            PdfPoints::new(image2_width as f32),
-                        )?;
-                    
-                        // Describe the placement of the object - put this one on the right side
-                        object2.translate(image2_x_position_in_points, image2_y_position_in_points)?;
-                    
-                        // Add the image from document 2 to the destination PDF page.
-                        page.objects_mut().add_image_object(object2)?;
-                    
                     } else {
-                        // Handle the error case
+
                         println!("Something went wrong when adding a page to the output PDF document.");
                     }
 

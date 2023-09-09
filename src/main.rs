@@ -601,15 +601,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Clean up, the comparison is over.
 
-    // If the user used the 'output' argument, write the output PDF file to the specified location.
+    // If the user used the 'output' argument
     if let Some(ref _value) = cli.output {
 
-        if let Some(ref path) = cli.output {
-            output_pdf.save_to_file(path)?;
-        } else {
-            println!("There is an issue with the file path provided as the output.");
-        }
+        // ...and there are differences in the document
+        if differences_found_in_document{
 
+            // Write the document to disk
+            if let Some(ref path) = cli.output {
+                output_pdf.save_to_file(path)?;
+            } else {
+                println!("There is an issue with the file path provided as the output.");
+            }
+
+        }
     }
 
 

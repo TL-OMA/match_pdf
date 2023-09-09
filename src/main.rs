@@ -266,7 +266,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let render_config = PdfRenderConfig::new()
     .set_target_width(2000)
     .set_maximum_height(2000)
-    .rotate_if_landscape(PdfPageRenderRotation::Degrees90, true)
     .render_form_data(false);
 
 
@@ -465,16 +464,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         doc2_page_completed_image = image2;
                     }
 
+                    ///////
+                    // Begin creating the page that will be added to the output PDF
+                    ///////
+
                     // PDF documents use points as a unit of measurement, and there are 72 points to an inch.
                     const POINTS_PER_INCH: f32 = 72.0;
 
-                    // Desired page size in inches
+                    // Desired page width in inches
                     let desired_width_in_inches = 17.0;  // For example: Letter width
-                    // let desired_height_in_inches = 11.0;  // For example: Letter height
 
-                    // Calculate the desired size in points
+                    // Calculate the desired width in points
                     let desired_width_in_points = desired_width_in_inches * POINTS_PER_INCH;
-                    // let desired_height_in_points = desired_height_in_inches * POINTS_PER_INCH;
 
                     // Calculate the scaling factor based on the desired width
                     let scale_factor = desired_width_in_points / (doc1_page_completed_image.width() + doc2_page_completed_image.width()) as f32;

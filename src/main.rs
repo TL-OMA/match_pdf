@@ -458,11 +458,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         }
 
-                    } else { // Else there are not differences in this page, so just use the non-highlighted images
+                    } else { // Else there are not differences in this page, so the only thing to do is put the ignored rectangles on the page, if there are any.
 
-                        doc1_page_completed_image = image1;
+                        //doc1_page_completed_image = image1;
 
-                        doc2_page_completed_image = image2;
+                        //doc2_page_completed_image = image2;
+
+                        // Check for rectangles that were ignored - and draw them
+                        if let Some(temporary_config_json) = &config_json {
+                            
+                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+
+                            // If there are rectangles that were ignored on this page
+                            if !current_page_rectangles_to_ignore.is_empty(){
+
+                                // Draw them onto the original, non-highlighted page images
+                                doc1_page_completed_image = images::draw_ignored_rectangles(&image1, Some(&current_page_rectangles_to_ignore));
+                                doc2_page_completed_image = images::draw_ignored_rectangles(&image2, Some(&current_page_rectangles_to_ignore));
+                            
+                            } else { // Else the original image is the completed image
+
+                                doc1_page_completed_image = image1;
+                                doc2_page_completed_image = image2;
+
+                            }
+
+                        } else { // There was a valid config JSON, but it did not contain ignored rectangles for this page
+
+                            // Make the original, non-highlighted images the completed images
+                            doc1_page_completed_image = image1;
+                            doc2_page_completed_image = image2;
+
+                        }
+                        
                     }
 
 

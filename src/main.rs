@@ -254,7 +254,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             file.read_to_string(&mut content).expect("Failed to read the specified config file.");
 
             // Deserialize the JSON content to the Config struct
-            config_json = Some(serde_json::from_str(&content).expect("\n\nFailed to deserialize JSON.  \n\nBe sure to use a zero before any decimal points in x or y values.\n\n"));
+            config_json = Some(serde_json::from_str(&content).expect("\n\nFailed to deserialize JSON.\
+                \n\nTips:\
+                \nVerify that the config file contains a valid JSON object.\
+                \nIf a value between 0 or 1 is desired for x or y, use a zero before the decimal.\n\n"));
             
             println!("{:?}", config_json);
 

@@ -161,30 +161,32 @@ pub fn draw_ignored_rectangles(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, ignore_re
     if let Some(rectangles) = ignore_rects {
         // Iterate over each rectangle
         for rect in rectangles {
+            
             let top_left = rect.top_left;
             let bottom_right = rect.bottom_right;
 
             // Draw the top and bottom borders of the rectangle:
             // Loop from the leftmost to the rightmost x-coordinate of the rectangle.
-            for x in top_left[0]..=bottom_right[0] {
+            // The x,y values are currently f64, so round them and make them ints
+            for x in (top_left[0].round() as i32)..(bottom_right[0].round() as i32) {
                 // Make sure we're not going out of the image's width boundaries
                 if x >= 0 && x < new_image.width() as i32 {
                     // Set the top border's pixel color
-                    set_ignored_pixel_border_color(&mut new_image, x, top_left[1]);
+                    set_ignored_pixel_border_color(&mut new_image, x, top_left[1].round() as i32);
                     // Set the bottom border's pixel color
-                    set_ignored_pixel_border_color(&mut new_image, x, bottom_right[1]);
+                    set_ignored_pixel_border_color(&mut new_image, x, bottom_right[1].round() as i32);
                 }
             }
 
             // Draw the left and right borders of the rectangle:
             // Loop from the top to the bottom y-coordinate of the rectangle, excluding the corners.
-            for y in (top_left[1] + 1)..bottom_right[1] {
+            for y in (top_left[1].round() as i32 + 1)..bottom_right[1].round() as i32 {
                 // Make sure we're not going out of the image's height boundaries
                 if y >= 0 && y < new_image.height() as i32 {
                     // Set the left border's pixel color
-                    set_ignored_pixel_border_color(&mut new_image, top_left[0], y);
+                    set_ignored_pixel_border_color(&mut new_image, top_left[0].round() as i32, y);
                     // Set the right border's pixel color
-                    set_ignored_pixel_border_color(&mut new_image, bottom_right[0], y);
+                    set_ignored_pixel_border_color(&mut new_image, bottom_right[0].round() as i32, y);
                 }
             }
         }

@@ -62,8 +62,8 @@ struct Cli {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Rectangle {
     pub page: String,
-    pub top_left: [i32; 2],
-    pub bottom_right: [i32; 2],
+    pub top_left: [f64; 2],
+    pub bottom_right: [f64; 2],
 }
 
 impl Rectangle {
@@ -97,7 +97,11 @@ pub struct Config {
 
 impl Config {
     // This method returns a Vec of matching rectangles for a given page value
-    pub fn get_matching_rectangles(&self, page: &str) -> Vec<Rectangle> {
+
+    // It *also* converts the x,y coordinates from inches to pixels
+    // ...based on the height of the document in points (this app targets 2000 pixels for height of the image)
+    
+    pub fn get_matching_rectangles(&self, page: &str, height_in_points: i32) -> Vec<Rectangle> {
         let mut matching_rects = Vec::new();
     
         for rect in &self.ignored_rectangles {
@@ -125,6 +129,34 @@ impl Config {
             }
         }
     
+        // Convert the x,y values from inches to pixels, based on the height of the PDF page
+
+        // Determine pixels per point
+        // 2000 / total height in points
+        let pixels_per_point = 2000.0 / height_in_points as f64;
+        println!("Pixels per point calculated as: {}", pixels_per_point.to_string());
+
+        // Convert the x,y values defining the rectangles from inches to pixels, using the points value
+        // This conversion will vary based on the size of the PDF page.
+        for rect in &mut matching_rects {
+
+            // (x or y value in inches) * 72 points per inch * pixels_per_point
+            // Top left x value
+            rect.top_left[0] = ((rect.top_left[0] as f64) * (72 as f64) * (pixels_per_point)).round();
+            println!("Rect top left x: {}", rect.top_left[0].to_string());
+            // Top left y value
+            rect.top_left[1] = ((rect.top_left[1] as f64) * (72 as f64) * (pixels_per_point)).round();
+            println!("Rect top left y: {}", rect.top_left[1].to_string());
+            // Bottom right x value
+            rect.bottom_right[0] = ((rect.bottom_right[0] as f64) * (72 as f64) * (pixels_per_point)).round();
+            println!("Rect bottom right x: {}", rect.bottom_right[0].to_string());
+            // Bottom right y value
+            rect.bottom_right[1] = ((rect.bottom_right[1] as f64) * (72 as f64) * (pixels_per_point)).round();
+            println!("Rect bottom right y: {}", rect.bottom_right[1].to_string());
+
+        }
+
+
         matching_rects
     }
 }
@@ -302,6 +334,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let doc2width = doc2page.width();
             let doc2height = doc2page.height();
 
+            let page_height_integer_in_points = doc1height.value.round() as i32;
 
 
             // If the size of the pages id different
@@ -335,9 +368,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // If there is a valid config json
             if let Some(temporary_config_json) = &config_json {
-                
+
                 // Check to see if there are rectangles that need to be ignored in this page
-                current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+                current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str(), page_height_integer_in_points);
 
                 println!("current_page_rectangles_to_ignore for page {:?}", page_val.to_string());
                 println!("{:?}", current_page_rectangles_to_ignore);
@@ -434,7 +467,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Check for rectangles that were ignored - and draw them
                         if let Some(temporary_config_json) = &config_json {
                             
-                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str(), page_height_integer_in_points);
 
                             // If there are rectangles that were ignored on this page
                             if !current_page_rectangles_to_ignore.is_empty(){
@@ -467,7 +500,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Check for rectangles that were ignored - and draw them
                         if let Some(temporary_config_json) = &config_json {
                             
-                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str());
+                            current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str(), page_height_integer_in_points);
 
                             // If there are rectangles that were ignored on this page
                             if !current_page_rectangles_to_ignore.is_empty(){

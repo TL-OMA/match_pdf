@@ -134,7 +134,7 @@ impl Config {
         // Determine pixels per point
         // 2000 / total height in points
         let pixels_per_point = 2000.0 / height_in_points as f64;
-        println!("Pixels per point calculated as: {}", pixels_per_point.to_string());
+        // println!("Pixels per point calculated as: {}", pixels_per_point.to_string());
 
         // Convert the x,y values defining the rectangles from inches to pixels, using the points value
         // This conversion will vary based on the size of the PDF page.
@@ -143,16 +143,19 @@ impl Config {
             // (x or y value in inches) * 72 points per inch * pixels_per_point
             // Top left x value
             rect.top_left[0] = ((rect.top_left[0] as f64) * (72 as f64) * (pixels_per_point)).round();
-            println!("Rect top left x: {}", rect.top_left[0].to_string());
+            // println!("Rect top left x: {}", rect.top_left[0].to_string());
+
             // Top left y value
             rect.top_left[1] = ((rect.top_left[1] as f64) * (72 as f64) * (pixels_per_point)).round();
-            println!("Rect top left y: {}", rect.top_left[1].to_string());
+            // println!("Rect top left y: {}", rect.top_left[1].to_string());
+
             // Bottom right x value
             rect.bottom_right[0] = ((rect.bottom_right[0] as f64) * (72 as f64) * (pixels_per_point)).round();
-            println!("Rect bottom right x: {}", rect.bottom_right[0].to_string());
+            // println!("Rect bottom right x: {}", rect.bottom_right[0].to_string());
+
             // Bottom right y value
             rect.bottom_right[1] = ((rect.bottom_right[1] as f64) * (72 as f64) * (pixels_per_point)).round();
-            println!("Rect bottom right y: {}", rect.bottom_right[1].to_string());
+            // println!("Rect bottom right y: {}", rect.bottom_right[1].to_string());
 
         }
 
@@ -177,9 +180,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cli = Cli::parse();
 
-    println!("pdf1: {}", cli.original_pdf1_path.display());
-    println!("pdf2: {}", cli.original_pdf2_path.display());
-
+    if cli.debug {
+        println!("pdf1: {}", cli.original_pdf1_path.display());
+        println!("pdf2: {}", cli.original_pdf2_path.display());
+    }
     
     // If the debug flag is set, print some flag and argument messages to the console
     if cli.debug {
@@ -259,7 +263,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 \nVerify that the config file contains a valid JSON object.\
                 \nIf a value between 0 or 1 is desired for x or y, use a zero before the decimal.\n\n"));
             
-            println!("{:?}", config_json);
+            // println!("{:?}", config_json);
 
         } 
     }
@@ -375,8 +379,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Check to see if there are rectangles that need to be ignored in this page
                 current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str(), page_height_integer_in_points);
 
-                println!("current_page_rectangles_to_ignore for page {:?}", page_val.to_string());
-                println!("{:?}", current_page_rectangles_to_ignore);
+                // println!("current_page_rectangles_to_ignore for page {:?}", page_val.to_string());
+                // println!("{:?}", current_page_rectangles_to_ignore);
 
                 // If there are rectangles that need to be ignored in this page
                 if !current_page_rectangles_to_ignore.is_empty(){

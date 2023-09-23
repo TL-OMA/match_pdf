@@ -192,14 +192,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cli = Cli::parse();
 
-    if cli.debug {
-        println!("pdf1: {}", cli.original_pdf1_path.display());
-        println!("pdf2: {}", cli.original_pdf2_path.display());
-    }
     
     // If the debug flag is set, print some flag and argument messages to the console
     if cli.debug {
         println!("The 'debug' flag was set.  More information will be provided at the console.");
+    
+        println!("pdf1: {}", cli.original_pdf1_path.display());
+        println!("pdf2: {}", cli.original_pdf2_path.display());
     
         if cli.stop {
             println!("The 'stop' flag was set.  The comparison will stop after the first page with differences.");

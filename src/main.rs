@@ -14,6 +14,8 @@ use std::path::PathBuf;
 use std::path::Path;
 use pdfium_render::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::io::prelude::*;
+use serde_json;
 
 
 // Define and collect arguments
@@ -50,6 +52,10 @@ struct Cli {
     /// An optional 'output' flag: Use with a file path to indicate where to place a results file.
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// An optional 'result' flag: Use with a file path to indicate where to place a results json file.
+    #[arg(short, long)]
+    result: Option<PathBuf>,
 
     /// An optional 'config' flag: Use with a file path to indicate where to find the config file.
     #[arg(short, long)]
@@ -165,6 +171,12 @@ impl Config {
 }
 
 
+// Structure for the result json output file
+#[derive(Serialize, Deserialize)]
+struct ComparisonResult {
+    match_result: String,
+}
+
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -216,6 +228,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => println!("The 'output' flag was not set."),
         }
     
+        match cli.result {
+            Some(ref value) => println!("The 'result' flag was set with value:  {}", value.to_string_lossy()),
+            None => println!("The 'result' flag was not set."),
+        }
+
         match cli.config {
             Some(ref value) => println!("The 'config' flag was set with value:  {}", value.to_string_lossy()),
             None => println!("The 'config' flag was not set."),
@@ -239,6 +256,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // If the user provided a result file, check to see if the included folder exists
+    if let Some(ref path) = cli.result {
+        // Extract the parent directory of the provided path
+        if let Some(parent_dir) = Path::new(path).parent() {
+            // If the parent directory does not exist, exit now.
+            if ! parent_dir.exists() {
+                println!("The provided result folder does not exist.");
+                process::exit(1);
+            }
+        } else {
+            println!("Invalid result path provided.");
+            process::exit(1);
+        }
+    }
 
     // If the config argument was used, evaluate and prep the data
     if let Some(ref _value) = cli.config {
@@ -700,6 +731,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fs::remove_dir_all(temp_path)?;
     } else {
         println!("Since the debug flag is set, the app-specific temp directory was not removed: {:?}", temp_path);
+    }
+
+
+    // If a result text (json) file is desired, write to it.
+    if let Some(ref _value) = cli.result {
+
+        // Set the text you want to write to the JSON
+        let result_text: String;
+
+        if differences_found_in_document || differences_in_number_of_pages {
+
+            result_text = "Differences were found".to_string();
+
+        } else {
+
+            result_text = "Documents match".to_string();
+
+        }
+
+        // Create a variable to hold the text result of the comparison
+        let result = ComparisonResult {
+            match_result: result_text,
+        };
+
+        // Serialize the result
+        let file_content = serde_json::to_string_pretty(&result).unwrap();
+
+        // Write serialized content to file using the user-specified PathBuf
+        let mut file = match File::create(_value) {  // Here, use _value which is a reference to the inner PathBuf
+            Ok(file) => file,
+            Err(e) => {
+                println!("Error creating file: {}", e);
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Error creating file",
+                )));
+            }
+        };
+
+        // Write the content to the file, using the file object:
+        if let Err(e) = file.write_all(file_content.as_bytes()) {
+            println!("Error writing to file: {}", e);
+        }
     }
 
 

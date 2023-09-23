@@ -700,8 +700,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // If the user used the 'output' argument
     if let Some(ref _value) = cli.output {
 
-        // ...and there are differences in the document
-        if differences_found_in_document{
+        // ...and there is at least one page in the output file
+        // (consider combinations like 'justdiff' and files matching)
+        if output_pdf.pages().get(0).is_ok() {
 
             // Write the document to disk
             if let Some(ref path) = cli.output {
@@ -709,9 +710,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 println!("There is an issue with the file path provided as the output.");
             }
-
+        
         }
-    }
+}
 
 
     if differences_found_in_document || differences_in_number_of_pages {

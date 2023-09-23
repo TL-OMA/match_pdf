@@ -22,7 +22,7 @@ use serde_json;
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "0.1")]
+#[command(version = "0.8")]
 #[command(about = "Compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,

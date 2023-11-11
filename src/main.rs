@@ -188,6 +188,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config_json: Option<Config> = None;
 
 
+    // ***** License Logic ***** //
+
+    // Create a machine fingerprint (UUID)
+
+    // If license key is found in local storage (ProgramData\match_pdf)
+
+        // If license is valid
+
+            // If Activation is Required
+            // https://github.com/keygen-sh/example-python-machine-heartbeats/blob/master/main.py
+            
+                // Activate the current machine for the license
+
+                // If successful, run!
+
+                // Else, provide the user with helpful info and end the process
+
+        // Else provide the user with some info and acquireLicenseKeyFromUser()
+
+    // Else provide the user with some info and acquireLicenseKeyFromUser()
+
+
+
+
     // Parse the command line arguments
 
     let cli = Cli::parse();

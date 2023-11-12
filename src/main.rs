@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::io::prelude::*;
 use serde_json;
 use uuid::Uuid;
+use reqwest;
 
 
 // Define and collect arguments
@@ -242,19 +243,55 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
 
     
-    // ***** License Logic ***** //
+    // ******************** License Logic ********************* //
 
     // Create a machine fingerprint (UUID)
     let instance_uuid = Uuid::new_v4();
-    
+    let instance_uuid_string = instance_uuid.to_string();
+
     if cli.debug {
         println!("Generated UUID: {:?}", instance_uuid);
     }
     
+    // Initial check of license through Keygen.sh API
+    match validate_license(&instance_uuid_string) {
+        LicenseValidationResult::Valid => println!("License validated successfully"),
+        LicenseValidationResult::Invalid(code) => println!("License key is invalid: code={}", code),
+        LicenseValidationResult::NoMachines => println!("No machines available for this license"),
+        LicenseValidationResult::Error(e) => println!("Error validating license: {:?}", e),
+    }
+
+    
+
 
     // If license key is found in local storage (ProgramData\match_pdf)
+    let license_path_string = "C:\\ProgramData\\match_pdf\\licenseInfo.txt";
+    let license_path = Path::new(license_path_string);
+
+    // Check if the license file (containing an encrypted license key) exists
+    if license_path.exists() {
+
+        // Check if the path is indeed a file and not a directory
+        if license_path.is_file() {
+            
+            if cli.debug {
+                println!("License file exists: {}", license_path.display());
+            }
+        
+        } else {
+            println!("Something is wrong with the license key file: {}", license_path.display());
+
+            println!("Try deleting this file and re-applying your license.");
+        }
+
+    
 
         // If license is valid
+        // match validate_license() {
+        //     Ok(()) => println!("License validated successfully"),
+        //     Err(e) => println!("Error validating license: {:?}", e),
+        // }
+
 
             // If Activation is Required
             // https://github.com/keygen-sh/example-python-machine-heartbeats/blob/master/main.py
@@ -269,7 +306,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Else provide the user with some info and acquireLicenseKeyFromUser()
 
-
+    } else {   // (license key file did not exist)
+        println!("It doesn't look like this app has a stored license key.  Let's take care of that...");
+    }
 
 
 
@@ -814,3 +853,65 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
 }
+
+
+
+
+
+// Custom Enum to define results coming out of the validate_license function
+enum LicenseValidationResult {
+    Valid,
+    Invalid(String),  // Holds the validation code
+    NoMachines,
+    Error(reqwest::Error),  // To handle network or other errors
+}
+
+
+
+// validate license file
+fn validate_license(fingerprint: &str) -> LicenseValidationResult {
+    let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.post(&format!(
+            "https://api.keygen.sh/v1/accounts/{account_id}/licenses/actions/validate-key",
+            account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e",
+        ))
+        .json(&serde_json::json!({
+            "meta": {
+                "scope": { "fingerprint" : fingerprint },
+                "key": license_key.trim_end()
+            }
+        }))
+        .send();
+
+    //let validation: serde_json::Value = res.json();
+
+    match res {
+        Ok(response) => {
+            // Now that we have a response, parse it as JSON
+            match response.json::<serde_json::Value>() {
+                Ok(validation) => {
+                    if validation["meta"]["valid"].as_bool().unwrap() {
+                        LicenseValidationResult::Valid
+                    } else {
+                        let validation_code = validation["meta"]["code"].as_str().unwrap_or("").to_string();
+                        
+                        if validation_code == "NO_MACHINES" {
+                            LicenseValidationResult::NoMachines
+                        } else {
+                            LicenseValidationResult::Invalid(validation_code)
+                        }
+                    }
+                },
+                Err(e) => LicenseValidationResult::Error(e),
+            }
+        },
+        Err(e) => LicenseValidationResult::Error(e),
+    }
+
+
+}
+
+
+

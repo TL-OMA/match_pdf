@@ -15,9 +15,11 @@ use std::path::Path;
 use pdfium_render::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::io::prelude::*;
-use serde_json;
+use serde_json::{json, Value};
 use uuid::Uuid;
 use reqwest;
+use reqwest::blocking::Client;
+use std::error::Error;
 
 
 // Define and collect arguments
@@ -243,72 +245,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
 
     
+    
     // ******************** License Logic ********************* //
+
+    // Keygen Account ID
+    let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
+
 
     // Create a machine fingerprint (UUID)
     let instance_uuid = Uuid::new_v4();
-    let instance_uuid_string = instance_uuid.to_string();
+
+    // Convert to a string
+    let fingerprint_uuid = instance_uuid.to_string();
 
     if cli.debug {
-        println!("Generated UUID: {:?}", instance_uuid);
-    }
-    
-    // Initial check of license through Keygen.sh API
-    match validate_license(&instance_uuid_string) {
-        LicenseValidationResult::Valid => println!("License validated successfully"),
-        LicenseValidationResult::Invalid(code) => println!("License key is invalid: code={}", code),
-        LicenseValidationResult::NoMachines => println!("No machines available for this license"),
-        LicenseValidationResult::Error(e) => println!("Error validating license: {:?}", e),
+        println!("Generated UUID for license activation: {:?}", fingerprint_uuid);
     }
 
     
+    // If ProgramDataLicenseExists
 
+        // activate_license(license_found_in_ProgramData, uuid)
+        let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
 
-    // If license key is found in local storage (ProgramData\match_pdf)
-    let license_path_string = "C:\\ProgramData\\match_pdf\\licenseInfo.txt";
-    let license_path = Path::new(license_path_string);
-
-    // Check if the license file (containing an encrypted license key) exists
-    if license_path.exists() {
-
-        // Check if the path is indeed a file and not a directory
-        if license_path.is_file() {
-            
-            if cli.debug {
-                println!("License file exists: {}", license_path.display());
-            }
-        
-        } else {
-            println!("Something is wrong with the license key file: {}", license_path.display());
-
-            println!("Try deleting this file and re-applying your license.");
+        match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
+            LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
+            // LicenseActivationResult::Expired => println!("License expired"),
+            LicenseActivationResult::Error(e) => println!("Error: {}", e),
+            LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
+            LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
         }
 
-    
-
-        // If license is valid
-        // match validate_license() {
-        //     Ok(()) => println!("License validated successfully"),
-        //     Err(e) => println!("Error validating license: {:?}", e),
-        // }
 
 
-            // If Activation is Required
-            // https://github.com/keygen-sh/example-python-machine-heartbeats/blob/master/main.py
-            
-                // Activate the current machine for the license
+        // if there was a failure to activate
 
-                // If successful, run!
+            // Capture license from the user
 
-                // Else, provide the user with helpful info and end the process
+    // Else
+        
+        // Capture license from the user
 
-        // Else provide the user with some info and acquireLicenseKeyFromUser()
-
-    // Else provide the user with some info and acquireLicenseKeyFromUser()
-
-    } else {   // (license key file did not exist)
-        println!("It doesn't look like this app has a stored license key.  Let's take care of that...");
-    }
 
 
 
@@ -857,61 +834,107 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 
-
-// Custom Enum to define results coming out of the validate_license function
-enum LicenseValidationResult {
-    Valid,
-    Invalid(String),  // Holds the validation code
-    NoMachines,
-    Error(reqwest::Error),  // To handle network or other errors
+// Custom Enum to define results coming out of the activate_license function
+enum LicenseActivationResult {
+    Success(String),
+    Error(Box<dyn Error>),
+    ValidationFailed(String),
+    ActivationFailed(String),
 }
 
 
 
-// validate license file
-fn validate_license(fingerprint: &str) -> LicenseValidationResult {
-    let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
+// Activate License Function
+// Emulating https://github.com/keygen-sh/example-python-machine-activation/blob/master/main.py
 
-    let client = reqwest::blocking::Client::new();
-    let res = client.post(&format!(
-            "https://api.keygen.sh/v1/accounts/{account_id}/licenses/actions/validate-key",
-            account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e",
-        ))
-        .json(&serde_json::json!({
-            "meta": {
-                "scope": { "fingerprint" : fingerprint },
-                "key": license_key.trim_end()
-            }
-        }))
-        .send();
+fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &str) -> LicenseActivationResult {
 
-    //let validation: serde_json::Value = res.json();
+    let client = Client::new();
 
-    match res {
-        Ok(response) => {
-            // Now that we have a response, parse it as JSON
-            match response.json::<serde_json::Value>() {
-                Ok(validation) => {
-                    if validation["meta"]["valid"].as_bool().unwrap() {
-                        LicenseValidationResult::Valid
-                    } else {
-                        let validation_code = validation["meta"]["code"].as_str().unwrap_or("").to_string();
-                        
-                        if validation_code == "NO_MACHINES" {
-                            LicenseValidationResult::NoMachines
-                        } else {
-                            LicenseValidationResult::Invalid(validation_code)
-                        }
-                    }
-                },
-                Err(e) => LicenseValidationResult::Error(e),
-            }
-        },
-        Err(e) => LicenseValidationResult::Error(e),
+    let validation_resp = match client.post(&format!(
+        "https://api.keygen.sh/v1/accounts/{}/licenses/actions/validate-key",
+        keygen_account_id
+    ))
+    .json(&json!({
+        "meta": {
+            "scope": { "fingerprint": fingerprint },
+            "key": license_key
+        }
+    }))
+    .send() {
+        Ok(resp) => resp,
+        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
+    };
+
+    let validation = match validation_resp.json::<Value>() {
+        Ok(v) => v,
+        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
+    };
+
+    if validation.get("errors").is_some() {
+        let errs = validation["errors"].as_array().unwrap();
+        let error_messages: Vec<String> = errs
+            .iter()
+            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
+            .collect();
+
+        return LicenseActivationResult::ValidationFailed(format!("License validation failed: {:?}", error_messages));
     }
 
+    if validation["meta"]["valid"].as_bool().unwrap_or(false) {
+        return LicenseActivationResult::Success("License has already been activated on this machine".to_string());
+    }
 
+    let validation_code = validation["meta"]["code"].as_str().unwrap_or("");
+    let activation_is_required = match validation_code {
+        "FINGERPRINT_SCOPE_MISMATCH" | "NO_MACHINES" | "NO_MACHINE" => true,
+        _ => false,
+    };
+
+    if !activation_is_required {
+        return LicenseActivationResult::ValidationFailed(format!("License {}", validation["meta"]["detail"].as_str().unwrap_or_default()));
+    }
+
+    // Activate the machine
+    let activation_resp = match client.post(&format!(
+        "https://api.keygen.sh/v1/accounts/{}/machines",
+        keygen_account_id
+    ))
+    .json(&json!({
+        "data": {
+            "type": "machines",
+            "attributes": {
+                "fingerprint": fingerprint
+            },
+            "relationships": {
+                "license": {
+                    "data": { "type": "licenses", "id": validation["data"]["id"] }
+                }
+            }
+        }
+    }))
+    .header("Authorization", format!("License {}", license_key))
+    .send() {
+        Ok(resp) => resp,
+        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
+    };
+
+    let activation = match activation_resp.json::<Value>() {
+        Ok(a) => a,
+        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
+    };
+
+    if activation.get("errors").is_some() {
+        let errs = activation["errors"].as_array().unwrap();
+        let error_messages: Vec<String> = errs
+            .iter()
+            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
+            .collect();
+
+        return LicenseActivationResult::ActivationFailed(format!("License activation failed: {:?}", error_messages));
+    }
+
+    LicenseActivationResult::Success("License activated for this machine".to_string())
 }
-
 
 

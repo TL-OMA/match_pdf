@@ -317,54 +317,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 
-
-    // // Create the folder if it doesn't exist
-    // fs::create_dir_all(license_config_folder)?;
-
-    // // Prepare the file, create it if it doesn't exist, or truncate it if it does
-    // let mut license_config_file = OpenOptions::new()
-    //     .write(true)
-    //     .create(true)
-    //     .truncate(true)
-    //     .open(&license_config_path)?;
-
-    // // JSON data to write
-    // let license_data = json!({
-    //     "license_key": "big-fat-key",
-    //     "license_type": "paid-one-year"
-    // });
-
-    // // Write the JSON data to the file
-    // license_config_file.write_all(license_data.to_string().as_bytes())?;
-
-
-
-
-
-        // // activate_license(license_found_in_ProgramData, uuid)
-        // let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
-
-        // match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
-        //     LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
-        //     // LicenseActivationResult::Expired => println!("License expired"),
-        //     LicenseActivationResult::Error(e) => println!("Error: {}", e),
-        //     LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
-        //     LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
-        // }
-
-
-
-        // if there was a failure to activate
-
-            // Capture license from the user
-
-    // Else
-        
-        // Capture license from the user
-
-
-
-
     // ******************** Command-Line Info Verification ********************* //
 
     // If the user provided an output file, check to see if the included folder exists

@@ -6,15 +6,13 @@ mod images;
 use clap::Parser;
 use image::DynamicImage;
 use image::{Rgba, RgbaImage};
-use std::fs;
-use std::fs::File;
-use std::io::Read;
+use std::fs::{self, File};
+use std::io::{self, Read, Write, ErrorKind};
 use std::process;
 use std::path::PathBuf;
 use std::path::Path;
 use pdfium_render::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::io::prelude::*;
 use serde_json::{json, Value};
 use uuid::Uuid;
 use reqwest;
@@ -245,36 +243,114 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
 
     
-    
+
     // ******************** License Logic ********************* //
 
     // Keygen Account ID
     let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
 
 
-    // Create a machine fingerprint (UUID)
+    // Create a fingerprint (UUID) for this run instance
     let instance_uuid = Uuid::new_v4();
 
     // Convert to a string
     let fingerprint_uuid = instance_uuid.to_string();
 
     if cli.debug {
-        println!("Generated UUID for license activation: {:?}", fingerprint_uuid);
+        println!("Generated run instance UUID for license activation: {:?}", fingerprint_uuid);
     }
 
+    // Local license configuration file work
     
-    // If ProgramDataLicenseExists
+    // Define some variables
+    let license_config_folder = "C:\\ProgramData\\MatchPDF";
+    let license_config_path = Path::new(license_config_folder).join("licenseConfig.dat");
 
-        // activate_license(license_found_in_ProgramData, uuid)
-        let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
+    // If the config file exists
+    if Path::new(&license_config_path).exists() {
+        
+        // Read the contents of the config file
+        match fs::read_to_string(&license_config_path) {
+            Ok(contents) => {
+                match serde_json::from_str::<Value>(&contents) {
+                    Ok(json) => {
+                        
+                        // Extract the license key
+                        if let Some(license_key) = json["license_key"].as_str() {
+                        
+                            // Attempt to activate the license
+                            match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
+                                LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
+                                LicenseActivationResult::Error(e) => println!("Error: {}", e),
+                                LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
+                                LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
+                            }
+                        } else {
+                            // Prompt for license key if JSON is invalid
+                            println!("Stored license key information invalid.");
+                            
+                            get_and_store_license_key(license_config_path);
+                            
+                        }
+                    },
+                    Err(_) => {
+                        // Prompt for license key if JSON parsing fails
+                        println!("Stored license key information invalid.");
 
-        match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
-            LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
-            // LicenseActivationResult::Expired => println!("License expired"),
-            LicenseActivationResult::Error(e) => println!("Error: {}", e),
-            LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
-            LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
+                        get_and_store_license_key(license_config_path);
+                        
+                    }
+                }
+            },
+            Err(_) => {
+                // Error handling for file read failure
+                println!("File read failure for license config file.");
+            }
         }
+    } else {
+        // File doesn't exist, prompt for license key
+        println!("There is no local license key information.");
+
+        get_and_store_license_key(license_config_path);
+    }
+
+
+
+
+
+    // // Create the folder if it doesn't exist
+    // fs::create_dir_all(license_config_folder)?;
+
+    // // Prepare the file, create it if it doesn't exist, or truncate it if it does
+    // let mut license_config_file = OpenOptions::new()
+    //     .write(true)
+    //     .create(true)
+    //     .truncate(true)
+    //     .open(&license_config_path)?;
+
+    // // JSON data to write
+    // let license_data = json!({
+    //     "license_key": "big-fat-key",
+    //     "license_type": "paid-one-year"
+    // });
+
+    // // Write the JSON data to the file
+    // license_config_file.write_all(license_data.to_string().as_bytes())?;
+
+
+
+
+
+        // // activate_license(license_found_in_ProgramData, uuid)
+        // let license_key = "2EE4AA-77081E-E79CE7-BA11F0-437F5F-V3";
+
+        // match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
+        //     LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
+        //     // LicenseActivationResult::Expired => println!("License expired"),
+        //     LicenseActivationResult::Error(e) => println!("Error: {}", e),
+        //     LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
+        //     LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
+        // }
 
 
 
@@ -289,6 +365,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 
+    // ******************** Command-Line Info Verification ********************* //
 
     // If the user provided an output file, check to see if the included folder exists
     if let Some(ref path) = cli.output {
@@ -845,12 +922,16 @@ enum LicenseActivationResult {
 
 
 // Activate License Function
+// Function to activate a software license using the Keygen API
 // Emulating https://github.com/keygen-sh/example-python-machine-activation/blob/master/main.py
+// Send MatchPDF keygenAccountID, UUID fingerprint, and this customer's license key
 
 fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &str) -> LicenseActivationResult {
 
+    // Create a new HTTP client instance
     let client = Client::new();
 
+    // Attempt to validate the license key with the Keygen API
     let validation_resp = match client.post(&format!(
         "https://api.keygen.sh/v1/accounts/{}/licenses/actions/validate-key",
         keygen_account_id
@@ -866,11 +947,13 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
         Err(e) => return LicenseActivationResult::Error(Box::new(e)),
     };
 
+    // Parse the JSON response for validation
     let validation = match validation_resp.json::<Value>() {
         Ok(v) => v,
         Err(e) => return LicenseActivationResult::Error(Box::new(e)),
     };
 
+    // Check for errors in the validation response and handle them.
     if validation.get("errors").is_some() {
         let errs = validation["errors"].as_array().unwrap();
         let error_messages: Vec<String> = errs
@@ -881,21 +964,24 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
         return LicenseActivationResult::ValidationFailed(format!("License validation failed: {:?}", error_messages));
     }
 
+    // Check if the license is already active
     if validation["meta"]["valid"].as_bool().unwrap_or(false) {
         return LicenseActivationResult::Success("License has already been activated on this machine".to_string());
     }
 
+    // Determine if activation is required based on the activation code
     let validation_code = validation["meta"]["code"].as_str().unwrap_or("");
     let activation_is_required = match validation_code {
         "FINGERPRINT_SCOPE_MISMATCH" | "NO_MACHINES" | "NO_MACHINE" => true,
         _ => false,
     };
 
+    // Handle cases where activation is not required
     if !activation_is_required {
         return LicenseActivationResult::ValidationFailed(format!("License {}", validation["meta"]["detail"].as_str().unwrap_or_default()));
     }
 
-    // Activate the machine
+    // Activate the machine with the license if required
     let activation_resp = match client.post(&format!(
         "https://api.keygen.sh/v1/accounts/{}/machines",
         keygen_account_id
@@ -919,11 +1005,13 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
         Err(e) => return LicenseActivationResult::Error(Box::new(e)),
     };
 
+    // Parse the JSON response for activation
     let activation = match activation_resp.json::<Value>() {
         Ok(a) => a,
         Err(e) => return LicenseActivationResult::Error(Box::new(e)),
     };
 
+    // Check for errors in the activation response and handle them
     if activation.get("errors").is_some() {
         let errs = activation["errors"].as_array().unwrap();
         let error_messages: Vec<String> = errs
@@ -934,7 +1022,62 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
         return LicenseActivationResult::ActivationFailed(format!("License activation failed: {:?}", error_messages));
     }
 
+    // Return success if the license is successfully activated
     LicenseActivationResult::Success("License activated for this machine".to_string())
 }
 
 
+// Function to prompt for and retrieve the license key from the user
+fn get_and_store_license_key(license_config_path: PathBuf) {
+    let mut license_key = String::new();
+
+    // Keep prompting until a valid license key is entered
+    loop {
+        print!("Please enter your license key: ");
+        io::stdout().flush().unwrap(); // Ensure the prompt is displayed immediately
+        io::stdin().read_line(&mut license_key).expect("Failed to read line");
+
+        // Trim newline and whitespace
+        license_key = license_key.trim().to_string();
+
+        // Check if the license key is non-zero length
+        if !license_key.is_empty() {
+            break; // Break the loop if the license key is valid
+        } else {
+            println!("Invalid input. License key cannot be empty.\n");
+        }
+    }
+
+    // Create the JSON object
+    let license_data = json!({
+        "license_key": &license_key,
+        // Add other fields if necessary
+    });
+
+    // Write to the file
+    {
+        // Ensure the directory exists
+        if let Some(parent) = license_config_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).expect("Failed to create config directory.  Be sure this app and user have write access to C:\\ProgramData");
+            }
+        }
+    
+        // Attempt to open or create the file
+        match File::create(&license_config_path) {
+            Ok(_) => {
+                // Write the license key to the file
+                fs::write(&license_config_path, serde_json::to_string(&license_data).unwrap())
+                    .expect("Failed to write to the config file");
+            },
+            Err(e) => {
+                // Handle specific error if the file does not exist
+                if e.kind() != ErrorKind::AlreadyExists {
+                    panic!("Failed to create the config file: {}", e);
+                }
+            }
+        }
+    }
+
+
+}

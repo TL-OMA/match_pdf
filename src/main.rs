@@ -242,9 +242,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     } 
 
-    
 
+    // ******************************************************** //
     // ******************** License Logic ********************* //
+    // ******************************************************** //
 
     // Keygen Account ID
     let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
@@ -281,9 +282,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Attempt to activate the license
                             match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
                                 LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
-                                LicenseActivationResult::Error(e) => println!("Error: {}", e),
-                                LicenseActivationResult::ValidationFailed(msg) => println!("Validation failed: {}", msg),
-                                LicenseActivationResult::ActivationFailed(msg) => println!("Activation failed: {}", msg),
+                                LicenseActivationResult::Error(e) => {
+                                    println!("Error Activating License: {}", e);
+                                    std::process::exit(1);
+                                },
+                                LicenseActivationResult::ValidationFailed(msg) => {
+                                    println!("License Validation Failed: {}", msg);
+                                    std::process::exit(1);
+                                },
+                                LicenseActivationResult::ActivationFailed(msg) => {
+                                    println!("License Activation failed: {}", msg);
+                                    std::process::exit(1);
+                                },
                             }
                         } else {
                             // Prompt for license key if JSON is invalid
@@ -305,6 +315,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Err(_) => {
                 // Error handling for file read failure
                 println!("File read failure for license config file.");
+
+                std::process::exit(1);
             }
         }
     } else {

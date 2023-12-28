@@ -281,23 +281,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         
                             // Attempt to activate the license
                             match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
-                                LicenseActivationResult::Success(msg) => println!("Success: {}", msg),
+                                LicenseActivationResult::Success(msg) => println!("Keygen: Success: {}", msg),
                                 LicenseActivationResult::Error(e) => {
-                                    println!("Error Activating License: {}", e);
+                                    println!("Keygen: Error Activating License: {}", e);
                                     std::process::exit(1);
                                 },
                                 LicenseActivationResult::ValidationFailed(msg) => {
-                                    println!("License Validation Failed: {}", msg);
+                                    println!("Keygen: License Validation Failed: {}", msg);
                                     std::process::exit(1);
                                 },
                                 LicenseActivationResult::ActivationFailed(msg) => {
-                                    println!("License Activation failed: {}", msg);
+                                    println!("Keygen: License Activation failed: {}", msg);
                                     std::process::exit(1);
                                 },
                             }
                         } else {
                             // Prompt for license key if JSON is invalid
-                            println!("Stored license key information invalid.");
+                            println!("Stored license key: Failed to read JSON.");
                             
                             get_and_store_license_key(license_config_path);
                             
@@ -305,7 +305,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     },
                     Err(_) => {
                         // Prompt for license key if JSON parsing fails
-                        println!("Stored license key information invalid.");
+                        println!("Stored license key JSON information invalid.");
 
                         get_and_store_license_key(license_config_path);
                         
@@ -314,14 +314,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
             Err(_) => {
                 // Error handling for file read failure
-                println!("File read failure for license config file.");
+                println!("General file read failure for license config file.");
 
                 std::process::exit(1);
             }
         }
     } else {
         // File doesn't exist, prompt for license key
-        println!("There is no local license key information.");
+        println!("License Key does not yet exist locally.");
 
         get_and_store_license_key(license_config_path);
     }
@@ -1043,5 +1043,8 @@ fn get_and_store_license_key(license_config_path: PathBuf) {
         }
     }
 
+    println!("License key successfully saved: {:?}", license_key);
+    println!("Exiting.  Rerun MatchPDF to use the key.");
+    std::process::exit(0);
 
 }

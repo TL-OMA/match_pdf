@@ -250,12 +250,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Keygen Account ID
     let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
 
-
     // Create a fingerprint (UUID) for this run instance
     let instance_uuid = Uuid::new_v4();
 
     // Convert to a string
     let fingerprint_uuid = instance_uuid.to_string();
+
+    let mut final_license_key: Option<String> = None;
 
     if cli.debug {
         println!("Generated run instance UUID for license activation: {:?}", fingerprint_uuid);
@@ -281,7 +282,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         
                             // Attempt to activate the license
                             match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
-                                LicenseActivationResult::Success(msg) => println!("Keygen: Success: {}", msg),
+                                LicenseActivationResult::Success(msg) => {
+                                    println!("Keygen: Success: {}", msg);
+                                    final_license_key = Some(license_key.to_string());
+                                },    
                                 LicenseActivationResult::Error(e) => {
                                     println!("Keygen: Error Activating License: {}", e);
                                     std::process::exit(1);
@@ -867,7 +871,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Release license before exiting
+    if let Some(ref local_license_key) = final_license_key {
+        release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+    }
 
+    
     Ok(())
 
 }
@@ -1037,7 +1046,7 @@ fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license
     //   - The license config file write could fail below, and we want to be ready for another try.
     //   - The app will not run its core functionality after running get_and_store_license_key().
 
-    // **************deactivate here******************* //
+    release_license(keygen_account_id, fingerprint, &license_key);
 
 
     // Create the JSON object
@@ -1060,19 +1069,69 @@ fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license
             Ok(_) => {
                 // Write the license key to the file
                 fs::write(&license_config_path, serde_json::to_string(&license_data).unwrap())
-                    .expect("Failed to write to the config file");
+                    .expect("Failed to write to the license config file");
             },
             Err(e) => {
                 // Handle specific error if the file does not exist
                 if e.kind() != ErrorKind::AlreadyExists {
-                    panic!("Failed to create the config file: {}", e);
+                    panic!("Failed to create the license config file: {}", e);
                 }
             }
         }
     }
 
     println!("License key successfully saved: {:?}", license_key);
-    println!("Exiting.  Rerun MatchPDF to use it with this saved key.");
+    println!("Exiting application.  Rerun MatchPDF to use it with this saved key.");
     std::process::exit(0);
 
 }
+
+
+
+// Custom Enum to define results coming out of the release_license function
+enum ReleaseLicenseResult {
+    Success(String),
+    Error(Box<dyn Error>),
+    DeactivationFailed(String),
+}
+
+
+// The following function essentially releases the license that this app run instance is holding.
+fn release_license(keygen_account_id: &str, fingerprint: &str, license_key: &str) -> ReleaseLicenseResult {
+    let client = Client::new();
+
+    // Build and send the request
+    let deactivation_resp = match client.delete(&format!(
+        "https://api.keygen.sh/v1/accounts/{}/machines/{}",
+        keygen_account_id,
+        fingerprint
+    ))
+    .header("Authorization", format!("License {}", license_key))
+    .send() {
+        Ok(resp) => resp,
+        Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
+    };
+
+    // Parse the JSON response for license release
+    let deactivation = match deactivation_resp.json::<Value>() {
+        Ok(a) => a,
+        Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
+    };
+
+    // Check for errors in the response and handle them
+    if deactivation.get("errors").is_some() {
+        let errs = deactivation["errors"].as_array().unwrap();
+        let error_messages: Vec<String> = errs
+            .iter()
+            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
+            .collect();
+
+        return ReleaseLicenseResult::DeactivationFailed(format!("License release failed: {:?}", error_messages));
+    }
+
+    // Return success if the license is successfully activated
+    ReleaseLicenseResult::Success("License successfully released.".to_string())
+
+}
+
+

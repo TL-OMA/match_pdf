@@ -243,9 +243,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
 
 
-    // ******************************************************** //
-    // ******************** License Logic ********************* //
-    // ******************************************************** //
+    // ************************************************************************************** //
+    // ******************** License Logic *************************************************** //
+    // ************************************************************************************** //
 
     // Keygen Account ID
     let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
@@ -299,7 +299,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Prompt for license key if JSON is invalid
                             println!("Stored license key: Failed to read JSON.");
                             
-                            get_and_store_license_key(license_config_path);
+                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
                             
                         }
                     },
@@ -307,7 +307,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Prompt for license key if JSON parsing fails
                         println!("Stored license key JSON information invalid.");
 
-                        get_and_store_license_key(license_config_path);
+                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
                         
                     }
                 }
@@ -323,7 +323,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // File doesn't exist, prompt for license key
         println!("License Key does not yet exist locally.");
 
-        get_and_store_license_key(license_config_path);
+        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
     }
 
 
@@ -992,7 +992,7 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
 
 
 // Function to prompt for and retrieve the license key from the user
-fn get_and_store_license_key(license_config_path: PathBuf) {
+fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf) {
     let mut license_key = String::new();
 
     // Keep prompting until a valid license key is entered
@@ -1004,13 +1004,41 @@ fn get_and_store_license_key(license_config_path: PathBuf) {
         // Trim newline and whitespace
         license_key = license_key.trim().to_string();
 
-        // Check if the license key is non-zero length
+        // If a non-zero length license key has been entered, let's try it!
         if !license_key.is_empty() {
-            break; // Break the loop if the license key is valid
+
+            // Attempt to activate the license
+            match activate_license(keygen_account_id, &fingerprint, &license_key) {
+                LicenseActivationResult::Success(msg) => {
+                    println!("Keygen: Success: {}", msg);
+                    break; // Break the loop if the license key is valid
+                }
+                LicenseActivationResult::Error(e) => {
+                    println!("Keygen: Error Activating License: {}", e);
+                    std::process::exit(1);
+                },
+                LicenseActivationResult::ValidationFailed(msg) => {
+                    println!("Keygen: License Validation Failed: {}", msg);
+                    std::process::exit(1);
+                },
+                LicenseActivationResult::ActivationFailed(msg) => {
+                    println!("Keygen: License Activation failed: {}", msg);
+                    std::process::exit(1);
+                },
+            }
+
         } else {
-            println!("Invalid input. License key cannot be empty.\n");
+            println!("License key cannot be empty.\n");
         }
     }
+
+    // Above loop is only broken IF the license was successfully activated.
+    // We'll deactivate here:
+    //   - The license config file write could fail below, and we want to be ready for another try.
+    //   - The app will not run its core functionality after running get_and_store_license_key().
+
+    // **************deactivate here******************* //
+
 
     // Create the JSON object
     let license_data = json!({
@@ -1044,7 +1072,7 @@ fn get_and_store_license_key(license_config_path: PathBuf) {
     }
 
     println!("License key successfully saved: {:?}", license_key);
-    println!("Exiting.  Rerun MatchPDF to use the key.");
+    println!("Exiting.  Rerun MatchPDF to use it with this saved key.");
     std::process::exit(0);
 
 }

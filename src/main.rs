@@ -303,7 +303,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Prompt for license key if JSON is invalid
                             println!("Stored license key: Failed to read JSON.");
                             
-                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
+                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
                             
                         }
                     },
@@ -311,7 +311,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Prompt for license key if JSON parsing fails
                         println!("Stored license key JSON information invalid.");
 
-                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
+                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
                         
                     }
                 }
@@ -327,7 +327,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // File doesn't exist, prompt for license key
         println!("License Key does not yet exist locally.");
 
-        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path);
+        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
     }
 
 
@@ -871,9 +871,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Release license before exiting
+    // Release license before exiting the app (happy path)
     if let Some(ref local_license_key) = final_license_key {
-        release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+        //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+        match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+            ReleaseLicenseResult::Success(msg) => {
+                if cli.debug {
+                    println!("Keygen: Successful License Release: {}", msg);
+                }
+            }
+            ReleaseLicenseResult::Error(e) => {
+                if cli.debug {
+                    println!("Keygen: Error Releasing License: {}", e);
+                }
+            },
+            ReleaseLicenseResult::DeactivationFailed(msg) => {
+                if cli.debug {
+                    println!("Keygen: License Release Failed: {}", msg);
+                }
+            },
+        }
     }
 
     
@@ -1001,7 +1018,7 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
 
 
 // Function to prompt for and retrieve the license key from the user
-fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf) {
+fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf, debug_flag: bool) {
     let mut license_key = String::new();
 
     // Keep prompting until a valid license key is entered
@@ -1046,7 +1063,23 @@ fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license
     //   - The license config file write could fail below, and we want to be ready for another try.
     //   - The app will not run its core functionality after running get_and_store_license_key().
 
-    release_license(keygen_account_id, fingerprint, &license_key);
+    match release_license(keygen_account_id, fingerprint, &license_key){
+        ReleaseLicenseResult::Success(msg) => {
+            if debug_flag {
+                println!("Keygen: Successful License Release: {}", msg);
+            }
+        }
+        ReleaseLicenseResult::Error(e) => {
+            if debug_flag {
+                println!("Keygen: Error Releasing License: {}", e);
+            }
+        },
+        ReleaseLicenseResult::DeactivationFailed(msg) => {
+            if debug_flag {
+                println!("Keygen: License Release Failed: {}", msg);
+            }
+        },
+    }
 
 
     // Create the JSON object

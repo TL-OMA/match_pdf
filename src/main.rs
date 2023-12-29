@@ -19,6 +19,7 @@ use reqwest;
 use reqwest::blocking::Client;
 use reqwest::StatusCode;
 use std::error::Error;
+use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 
 
 // Define and collect arguments
@@ -192,7 +193,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut differences_found_in_page: bool;
     let mut differences_in_number_of_pages: bool = false;
     let mut config_json: Option<Config> = None;
-
+    let license_crypto_key = "MIICWwIBAAKBgQCq447HSp9vCaaLaZdDA71sOBbM1/tLwPSAbWxgefb8jI+9z80ssctY5jNDESBzFo5tVr3M5iAge28QpWuUkxbeidS";
 
 
     // Parse the command line arguments
@@ -277,13 +278,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let license_config_folder = "C:\\ProgramData\\MatchPDF";
     let license_config_path = Path::new(license_config_folder).join("licenseConfig.dat");
 
+    // Initialize magic_crypt
+    let decrypt_magic_crypt_instance = new_magic_crypt!(license_crypto_key, 256);
+
     // If the config file exists and the 'license' flag is not set
     if Path::new(&license_config_path).exists() && !cli.license {
         
         // Read the contents of the config file
         match fs::read_to_string(&license_config_path) {
-            Ok(contents) => {
-                match serde_json::from_str::<Value>(&contents) {
+            Ok(encrypted_contents) => {
+                // Decrypt the contents
+                let decrypted_license_config_contents = decrypt_magic_crypt_instance.decrypt_base64_to_string(&encrypted_contents)
+                    .expect("Failed to decrypt the file contents");
+
+                match serde_json::from_str::<Value>(&decrypted_license_config_contents) {
                     Ok(json) => {
                         
                         // Extract the license key
@@ -314,7 +322,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Prompt for license key if JSON is invalid
                             println!("Stored license key: Failed to read JSON.");
                             
-                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
+                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
                             
                         }
                     },
@@ -322,7 +330,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // Prompt for license key if JSON parsing fails
                         println!("Stored license key JSON information invalid.");
 
-                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
+                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
                         
                     }
                 }
@@ -338,7 +346,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // File doesn't exist or the license flag is set: prompt for license key
         println!("License Key does not yet exist locally or the 'license' flag was used.");
 
-        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
+        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
     }
 
 
@@ -1029,7 +1037,7 @@ fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &st
 
 
 // Function to prompt for and retrieve the license key from the user
-fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf, debug_flag: bool) {
+fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf, debug_flag: bool, license_crypto_key: &str) {
     let mut license_key = String::new();
 
     // Keep prompting until a valid license key is entered
@@ -1101,18 +1109,25 @@ fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license
 
     // Write to the file
     {
+        // Initialze magic_crypt with a secret key and a bit mode
+        let magic_crypt_instance = new_magic_crypt!(license_crypto_key, 256);
+
         // Ensure the directory exists
         if let Some(parent) = license_config_path.parent() {
             if !parent.exists() {
                 fs::create_dir_all(parent).expect("Failed to create config directory.  Be sure this app and user have write access to C:\\ProgramData");
             }
         }
-    
+
+        // Convert data to JSON and encrypt it
+        let json_data = serde_json::to_string(&license_data).unwrap();
+        let encrypted_json_data = magic_crypt_instance.encrypt_str_to_base64(json_data);
+
         // Attempt to open or create the file
         match File::create(&license_config_path) {
             Ok(_) => {
-                // Write the license key to the file
-                fs::write(&license_config_path, serde_json::to_string(&license_data).unwrap())
+                // Write the encrypted data to the file
+                fs::write(&license_config_path, encrypted_json_data)
                     .expect("Failed to write to the license config file");
             },
             Err(e) => {

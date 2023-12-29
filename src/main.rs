@@ -64,6 +64,9 @@ struct Cli {
     #[arg(short, long)]
     config: Option<PathBuf>,
 
+    // An optional 'license' flag: Force the prompt for a new license, even if one is stored locally already.
+    #[arg(short, long)]
+    license: bool,
 }
 
 
@@ -241,6 +244,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => println!("The 'config' flag was not set."),
         }
     
+        if cli.license {
+            println!("The 'license' flag was set.  This forces the prompt for a new license even if an existing license is stored locally.");
+        } else {
+            println!("The 'license' flag was not set.");
+        }
     } 
 
 
@@ -269,8 +277,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let license_config_folder = "C:\\ProgramData\\MatchPDF";
     let license_config_path = Path::new(license_config_folder).join("licenseConfig.dat");
 
-    // If the config file exists
-    if Path::new(&license_config_path).exists() {
+    // If the config file exists and the 'license' flag is not set
+    if Path::new(&license_config_path).exists() && !cli.license {
         
         // Read the contents of the config file
         match fs::read_to_string(&license_config_path) {
@@ -327,8 +335,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     } else {
-        // File doesn't exist, prompt for license key
-        println!("License Key does not yet exist locally.");
+        // File doesn't exist or the license flag is set: prompt for license key
+        println!("License Key does not yet exist locally or the 'license' flag was used.");
 
         get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug);
     }

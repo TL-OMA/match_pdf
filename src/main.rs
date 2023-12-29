@@ -17,6 +17,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 use reqwest;
 use reqwest::blocking::Client;
+use reqwest::StatusCode;
 use std::error::Error;
 
 
@@ -283,7 +284,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Attempt to activate the license
                             match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
                                 LicenseActivationResult::Success(msg) => {
-                                    println!("Keygen: Success: {}", msg);
+                                    if cli.debug {
+                                        println!("Keygen: Success: {}", msg);
+                                    }
                                     final_license_key = Some(license_key.to_string());
                                 },    
                                 LicenseActivationResult::Error(e) => {
@@ -1145,26 +1148,36 @@ fn release_license(keygen_account_id: &str, fingerprint: &str, license_key: &str
         Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
     };
 
-    // Parse the JSON response for license release
-    let deactivation = match deactivation_resp.json::<Value>() {
-        Ok(a) => a,
-        Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
-    };
+    // Check the response status code
+    match deactivation_resp.status() {
+        StatusCode::OK => {
+            let deactivation = match deactivation_resp.json::<Value>() {
+                Ok(json) => json,
+                Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
+            };
 
-    // Check for errors in the response and handle them
-    if deactivation.get("errors").is_some() {
-        let errs = deactivation["errors"].as_array().unwrap();
-        let error_messages: Vec<String> = errs
-            .iter()
-            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
-            .collect();
+            if deactivation.get("errors").is_some() {
+                let errs = deactivation["errors"].as_array().unwrap();
+                let error_messages: Vec<String> = errs
+                    .iter()
+                    .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
+                    .collect();
 
-        return ReleaseLicenseResult::DeactivationFailed(format!("License release failed: {:?}", error_messages));
+                return ReleaseLicenseResult::DeactivationFailed(format!("License release failed: {:?}", error_messages));
+            }
+
+            ReleaseLicenseResult::Success("License successfully released.".to_string())
+        },
+        StatusCode::NO_CONTENT => ReleaseLicenseResult::Success("No content, but request was successful.".to_string()),
+        _ => {
+            let body = match deactivation_resp.text() {
+                Ok(text) => text,
+                Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
+            };
+            println!("Error Response Body: {:?}", body);
+            ReleaseLicenseResult::DeactivationFailed(format!("Unexpected response: {}", body))
+        },
     }
-
-    // Return success if the license is successfully activated
-    ReleaseLicenseResult::Success("License successfully released.".to_string())
-
 }
 
 

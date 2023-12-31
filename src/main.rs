@@ -26,8 +26,8 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "0.8")]
-#[command(about = "Compares two pdf documents.", long_about = None)]
+#[command(version = "1.0")]
+#[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,
     original_pdf2_path: PathBuf,
@@ -523,9 +523,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Check to see if there are rectangles that need to be ignored in this page
                 current_page_rectangles_to_ignore = temporary_config_json.get_matching_rectangles(page_val.to_string().as_str(), page_height_integer_in_points);
 
-                // println!("current_page_rectangles_to_ignore for page {:?}", page_val.to_string());
-                // println!("{:?}", current_page_rectangles_to_ignore);
-
                 // If there are rectangles that need to be ignored in this page
                 if !current_page_rectangles_to_ignore.is_empty(){
 
@@ -643,10 +640,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                     } else { // Else there are not differences in this page, so the only thing to do is put the ignored rectangles on the page, if there are any.
-
-                        //doc1_page_completed_image = image1;
-
-                        //doc2_page_completed_image = image2;
 
                         // Check for rectangles that were ignored - and draw them
                         if let Some(temporary_config_json) = &config_json {

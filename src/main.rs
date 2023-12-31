@@ -1191,7 +1191,7 @@ fn release_license(keygen_account_id: &str, fingerprint: &str, license_key: &str
 
             ReleaseLicenseResult::Success("License successfully released.".to_string())
         },
-        StatusCode::NO_CONTENT => ReleaseLicenseResult::Success("No content, but request was successful.".to_string()),
+        StatusCode::NO_CONTENT => ReleaseLicenseResult::Success("Success response received.".to_string()),
         _ => {
             let body = match deactivation_resp.text() {
                 Ok(text) => text,

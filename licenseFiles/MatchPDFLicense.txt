@@ -1,0 +1,28 @@
+﻿MatchPDF Software License Agreement
+
+
+IMPORTANT: PLEASE READ THIS LICENSE AGREEMENT CAREFULLY BEFORE CONTINUING WITH THE INSTALLATION PROCESS.
+
+
+1. License Grant: This License Agreement ("Agreement") is a legal agreement between you (either an individual or a single entity) and MatchPDF for the MatchPDF software product, which includes computer software and associated media, printed materials, and online or electronic documentation ("Software"). By installing, copying, or otherwise using the MatchPDF, you agree to be bound by the terms of this Agreement. If you do not agree to the terms of this Agreement, do not install or use the MatchPDF software.
+
+
+2. Payment and Activation: The MatchPDF software requires a valid license to operate. This license can be obtained through a one-time purchase or via a free trial. The free trial license is time-limited and subject to the terms outlined in this Agreement.
+
+
+3. Use Restrictions: This software is licensed, not sold. Under this License Agreement, you are permitted to install the MatchPDF software on any number of machines. However, the number of simultaneous running instances of the MatchPDF software must not exceed the number of licenses purchased. Each license allows for one simultaneous running instance of the software. You may not modify, reverse engineer, decompile, or disassemble the Software, except and only to the extent that such activity is expressly permitted by applicable law notwithstanding this limitation.
+
+
+4. Copy Restrictions: The Software is copyrighted, and all rights are reserved by MatchPDF.
+
+
+5. Termination: Without prejudice to any other rights, MatchPDF may terminate this Agreement if you fail to comply with the terms and conditions of this Agreement. In such an event, you must destroy all copies of the Software and all of its component parts.
+
+
+6. Disclaimer of Warranty: The MatchPDF is provided "as is" without warranty of any kind, either express or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose.
+
+
+7. Limitation of Liability: In no event shall MatchPDF be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or any other pecuniary loss) arising out of the use or inability to use this MatchPDF product, even if MatchPDF has been advised of the possibility of such damages.
+
+
+8. Compliance with Laws: You must comply with all applicable laws regarding the use of the Software.

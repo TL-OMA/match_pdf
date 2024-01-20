@@ -6,6 +6,7 @@
 #define MyAppPublisher "MatchPDF"
 #define MyAppURL "http://www.matchpdf.com/"
 #define MyAppExeName "match_pdf.exe"
+#define MyDateTimeString GetDateTimeString('yyyy-mm-dd_hh-nn-ss', '', '')
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -22,12 +23,12 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=C:\repos\match_pdf\licenseFiles\MatchPDFLicense.txt
-InfoBeforeFile=C:\Users\Lawrenson\Desktop\temp\matchpdf\installerInfoFiles\beforeInstallation.txt
-InfoAfterFile=C:\Users\Lawrenson\Desktop\temp\matchpdf\installerInfoFiles\afterInstallation.txt
+InfoBeforeFile=C:\repos\match_pdf\installerFiles\beforeInstallation.txt
+InfoAfterFile=C:\repos\match_pdf\installerFiles\afterInstallation.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\MatchPDF Installers\2024-01-20\New folder
+OutputDir=C:\MatchPDF Installers\{#MyDateTimeString}
 OutputBaseFilename=MatchPDF_1.0.0_Installer
 SetupIconFile=C:\Users\Lawrenson\Desktop\temp\matchPDFInstallerFiles\matchPDF.ico
 Compression=lzma

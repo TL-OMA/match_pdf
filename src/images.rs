@@ -124,24 +124,24 @@ pub fn highlight_chunks(image: &ImageBuffer<Rgba<u8>, Vec<u8>>, chunks: &[(u32, 
 
                     // If the pixel is dark
                     if pixel[0] < 150 && pixel[1] < 150 && pixel[2] < 150 {
-                        // Change it appropriately (Light Pink)
-                        pixel[0] = 249;
-                        pixel[1] = 133;
-                        pixel[2] = 139;
+                        // Change it appropriately (Dark blue)
+                        pixel[0] = 38;
+                        pixel[1] = 84;
+                        pixel[2] = 124;
 
                     // ...else if the pixel is light 
-                    } else if pixel[0] > 215 && pixel[1] < 215 && pixel[2] < 215{
-                        // Change it appropriately (Hot Pink)
-                        pixel[0] = 118;
-                        pixel[1] = 17;
-                        pixel[2] = 55; 
+                    } else if pixel[0] > 215 && pixel[1] > 215 && pixel[2] > 215{
+                        // Change it appropriately (Golden)
+                        pixel[0] = 255;
+                        pixel[1] = 209;
+                        pixel[2] = 102; 
 
 
                     } else {
-                        // Make all other pixels Maroon
-                        pixel[0] = 237;
-                        pixel[1] = 51;
-                        pixel[2] = 95; 
+                        // Make all other pixels salmonish
+                        pixel[0] = 239;
+                        pixel[1] = 71;
+                        pixel[2] = 111; 
 
                     }
                 }

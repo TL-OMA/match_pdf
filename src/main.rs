@@ -26,7 +26,7 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.0")]
+#[command(version = "1.0.1")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,
@@ -289,7 +289,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(encrypted_contents) => {
                 // Decrypt the contents
                 let decrypted_license_config_contents = decrypt_magic_crypt_instance.decrypt_base64_to_string(&encrypted_contents)
-                    .expect("Failed to decrypt the file contents");
+                    .expect("Failed to decrypt the file contents - the license config file may be corrupt.  Please run \"match_pdf.exe -license example1.pdf example2.pdf\" to reinstall your license.");
 
                 match serde_json::from_str::<Value>(&decrypted_license_config_contents) {
                     Ok(json) => {

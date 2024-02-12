@@ -339,6 +339,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Error handling for file read failure
                 println!("General file read failure for license config file.");
 
+                // Release license before exiting the app
+                if let Some(ref local_license_key) = final_license_key {
+                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                        ReleaseLicenseResult::Success(msg) => {
+                            if cli.debug {
+                                println!("Keygen: Successful License Release: {}", msg);
+                            }
+                        }
+                        ReleaseLicenseResult::Error(e) => {
+                            if cli.debug {
+                                println!("Keygen: Error Releasing License: {}", e);
+                            }
+                        },
+                        ReleaseLicenseResult::DeactivationFailed(msg) => {
+                            if cli.debug {
+                                println!("Keygen: License Release Failed: {}", msg);
+                            }
+                        },
+                    }
+                }
+
                 std::process::exit(1);
             }
         }
@@ -361,10 +383,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the parent directory does not exist, exit now.
             if ! parent_dir.exists() {
                 println!("The provided output folder does not exist.");
+
+                // Release license before exiting the app
+                if let Some(ref local_license_key) = final_license_key {
+                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                        ReleaseLicenseResult::Success(msg) => {
+                            if cli.debug {
+                                println!("Keygen: Successful License Release: {}", msg);
+                            }
+                        }
+                        ReleaseLicenseResult::Error(e) => {
+                            if cli.debug {
+                                println!("Keygen: Error Releasing License: {}", e);
+                            }
+                        },
+                        ReleaseLicenseResult::DeactivationFailed(msg) => {
+                            if cli.debug {
+                                println!("Keygen: License Release Failed: {}", msg);
+                            }
+                        },
+                    }
+                }
+
                 process::exit(1);
             }
         } else {
             println!("Invalid output path provided.");
+
+            // Release license before exiting the app
+            if let Some(ref local_license_key) = final_license_key {
+                //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                    ReleaseLicenseResult::Success(msg) => {
+                        if cli.debug {
+                            println!("Keygen: Successful License Release: {}", msg);
+                        }
+                    }
+                    ReleaseLicenseResult::Error(e) => {
+                        if cli.debug {
+                            println!("Keygen: Error Releasing License: {}", e);
+                        }
+                    },
+                    ReleaseLicenseResult::DeactivationFailed(msg) => {
+                        if cli.debug {
+                            println!("Keygen: License Release Failed: {}", msg);
+                        }
+                    },
+                }
+            }
+
             process::exit(1);
         }
     }
@@ -376,10 +444,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the parent directory does not exist, exit now.
             if ! parent_dir.exists() {
                 println!("The provided result folder does not exist.");
+
+                // Release license before exiting the app
+                if let Some(ref local_license_key) = final_license_key {
+                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                        ReleaseLicenseResult::Success(msg) => {
+                            if cli.debug {
+                                println!("Keygen: Successful License Release: {}", msg);
+                            }
+                        }
+                        ReleaseLicenseResult::Error(e) => {
+                            if cli.debug {
+                                println!("Keygen: Error Releasing License: {}", e);
+                            }
+                        },
+                        ReleaseLicenseResult::DeactivationFailed(msg) => {
+                            if cli.debug {
+                                println!("Keygen: License Release Failed: {}", msg);
+                            }
+                        },
+                    }
+                }
+
                 process::exit(1);
             }
         } else {
             println!("Invalid result path provided.");
+
+            // Release license before exiting the app
+            if let Some(ref local_license_key) = final_license_key {
+                //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                    ReleaseLicenseResult::Success(msg) => {
+                        if cli.debug {
+                            println!("Keygen: Successful License Release: {}", msg);
+                        }
+                    }
+                    ReleaseLicenseResult::Error(e) => {
+                        if cli.debug {
+                            println!("Keygen: Error Releasing License: {}", e);
+                        }
+                    },
+                    ReleaseLicenseResult::DeactivationFailed(msg) => {
+                        if cli.debug {
+                            println!("Keygen: License Release Failed: {}", msg);
+                        }
+                    },
+                }
+            }
+
             process::exit(1);
         }
     }
@@ -392,6 +506,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the config path does not exist, exit now.
             if ! Path::new(path).exists() {
                 println!("The provided config file does not exist.");
+
+                // Release license before exiting the app
+                if let Some(ref local_license_key) = final_license_key {
+                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                        ReleaseLicenseResult::Success(msg) => {
+                            if cli.debug {
+                                println!("Keygen: Successful License Release: {}", msg);
+                            }
+                        }
+                        ReleaseLicenseResult::Error(e) => {
+                            if cli.debug {
+                                println!("Keygen: Error Releasing License: {}", e);
+                            }
+                        },
+                        ReleaseLicenseResult::DeactivationFailed(msg) => {
+                            if cli.debug {
+                                println!("Keygen: License Release Failed: {}", msg);
+                            }
+                        },
+                    }
+                }
+
                 process::exit(1);
             } 
 

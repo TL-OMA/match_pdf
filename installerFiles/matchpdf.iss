@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "MatchPDF"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "MatchPDF"
 #define MyAppURL "http://www.matchpdf.com/"
 #define MyAppExeName "match_pdf.exe"
@@ -30,7 +30,7 @@ InfoAfterFile=C:\repos\match_pdf\installerFiles\afterInstallation.txt
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=C:\MatchPDF Installers\{#MyDateTimeString}
 OutputBaseFilename=MatchPDF_{#MyAppVersion}_Installer
-SetupIconFile=C:\Users\Lawrenson\Desktop\temp\matchPDFInstallerFiles\matchPDF.ico
+SetupIconFile=C:\temp\installerFiles\matchPDF.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

@@ -3,6 +3,5 @@ Welcome!
 You are installing MatchPDF on your system.
 
 System Requirements:
-  2GB Ram
   Microsoft Windows Operating System
-  An internet connection to reach our licensing partner, Keygen.sh.
+  An internet connection to reach our licensing partner: Keygen.sh

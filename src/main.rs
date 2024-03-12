@@ -41,7 +41,7 @@ struct Cli {
     #[arg(short, long)]
     stop: bool,
 
-    /// An optional 'justdiff' flag: In combination with 'output', only different pages are included in output file.
+    /// An optional 'justdiff' flag: In combination with 'output', only different pages are included in output PDF file.
     #[arg(short, long)]
     justdiff: bool,
 
@@ -49,15 +49,15 @@ struct Cli {
     #[arg(short, long)]
     pages: Option<i32>,
 
-    /// An optional 'maxpages' flag: At a maximum, compare ## pages.  Can be combined with other flags.
+    /// An optional 'maxpages' flag: At a maximum, compare ## pages.
     #[arg(short, long)]
     maxpages: Option<i32>,
 
-    /// An optional 'output' flag: Use with a file path to indicate where to place a results file.
+    /// An optional 'output' flag: Use with a file path to indicate where to place a results PDF file.
     #[arg(short, long)]
     output: Option<PathBuf>,
 
-    /// An optional 'result' flag: Use with a file path to indicate where to place a results json file.
+    /// An optional 'result' flag: Use with a file path to indicate where to place a results JSON file.
     #[arg(short, long)]
     result: Option<PathBuf>,
 

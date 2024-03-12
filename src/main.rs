@@ -714,9 +714,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 }
 
-                if cli.debug{    
-                    println!("Config JSON is not initialized.");
-                }
             }
 
 

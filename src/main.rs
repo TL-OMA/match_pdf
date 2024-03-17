@@ -11,6 +11,8 @@ use std::io::{self, Read, Write, ErrorKind};
 use std::process;
 use std::path::PathBuf;
 use std::path::Path;
+use std::time::Instant;
+use std::time::Duration;
 use pdfium_render::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -388,6 +390,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Read the contents of the config file
         match fs::read_to_string(&license_config_path) {
             Ok(encrypted_contents) => {
+                
                 // Decrypt the contents
                 let decrypted_license_config_contents = decrypt_magic_crypt_instance.decrypt_base64_to_string(&encrypted_contents)
                     .expect("Failed to decrypt the file contents - the license config file may be corrupt.  Please run \"match_pdf.exe -license example1.pdf example2.pdf\" to reinstall your license.");
@@ -471,6 +474,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
     }
+
+    // If we made it this far, a license is now active.  Mark the time.
+    // A two minute timer starts now.
+    // The keygen.sh license policy is set to a 120 second (2 minute) heartbeat duration.
+    // We'll only release the license if it's been 118 seconds or less since activation.
+    // Otherwise, a "release" call will fail.
+    let license_activation_start_time = Instant::now();
+
 
     // ****** End Initial License Logic ******* //
 
@@ -924,28 +935,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // ********** //
     // Release license before exiting the app (happy path)
-    if let Some(ref local_license_key) = final_license_key {
-        //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-        match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-            ReleaseLicenseResult::Success(msg) => {
-                if cli.debug {
-                    println!("Keygen: Successful License Release: {}", msg);
-                }
-            }
-            ReleaseLicenseResult::Error(e) => {
-                if cli.debug {
-                    println!("Keygen: Error Releasing License: {}", e);
-                }
-            },
-            ReleaseLicenseResult::DeactivationFailed(msg) => {
-                if cli.debug {
-                    println!("Keygen: License Release Failed: {}", msg);
-                }
-            },
-        }
-    }
+    // ********** //
 
+    // Check if elapsed time since license actvation is less than 118 seconds (2 minutes minus a couple seconds)
+    // See comment at license_activation_start_time for explanation.
+    let elapsed_time = license_activation_start_time.elapsed();
+    if elapsed_time < Duration::from_secs(118) {
+        
+        // If it's been under 2 minutes, the license needs to be released.
+        if let Some(ref local_license_key) = final_license_key {
+            //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
+            match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
+                ReleaseLicenseResult::Success(msg) => {
+                    if cli.debug {
+                        println!("Keygen: Successful License Release: {}", msg);
+                    }
+                }
+                ReleaseLicenseResult::Error(e) => {
+                    if cli.debug {
+                        println!("Keygen: Error Releasing License: {}", e);
+                    }
+                },
+                ReleaseLicenseResult::DeactivationFailed(msg) => {
+                    if cli.debug {
+                        println!("Keygen: License Release Failed: {}", msg);
+                    }
+                },
+            }
+        }
+
+    } 
     
     Ok(())
 

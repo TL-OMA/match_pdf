@@ -504,7 +504,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if cli.debug {
                 if index % 10 == 0 {
-                    println!("Processing page {:?}", (index + 1));
+                    if index == 0{
+                        println!("Comparison underway...");
+                    } else {
+                        println!("{:?} pages processed", (index));
+                    }
                 }
             }
 

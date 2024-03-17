@@ -1,6 +1,5 @@
 // main
 
-mod common;
 mod images;
 
 use clap::Parser;
@@ -28,7 +27,7 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.1")]
+#[command(version = "1.0.2")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,
@@ -334,14 +333,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         } 
     }
 
-
-    // Define a temp folder to use based on the system temp folder
-
-    let temp_path: PathBuf = common::get_temp_dir("pdf_match");
-
-    if cli.debug {
-        println!("App-specific temp directory is: {:?}", temp_path);
-    }
 
     // Bind to the pdfium library (external, pre-built pdfium.dll)
 
@@ -866,14 +857,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     }
     
-
-    // Remove the temp folder if not in debug mode.
-    if !cli.debug {
-        fs::remove_dir_all(temp_path)?;
-    } else {
-        println!("Since the debug flag is set, the app-specific temp directory was not removed: {:?}", temp_path);
-    }
-
 
     // If a result text (json) file is desired, write to it.
     if let Some(ref _value) = cli.result {

@@ -253,6 +253,107 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } 
 
 
+
+
+    // ****************************************************************************** //
+    // ******************** Command-Line Info Verification ************************** //
+    // ****************************************************************************** //
+
+
+    // PDF Output File
+
+    // If the user provided an output file, check to see if the included folder exists
+    if let Some(ref path) = cli.output {
+        // Extract the parent directory of the provided path
+        if let Some(parent_dir) = Path::new(path).parent() {
+            // If the parent directory does not exist, exit now.
+            if ! parent_dir.exists() {
+                println!("The provided output folder does not exist.");
+
+                process::exit(1);
+            }
+        } else {
+            println!("Invalid output path provided.");
+
+            process::exit(1);
+        }
+    }
+
+    // Results File (JSON)
+
+    // If the user provided a result file, check to see if the included folder exists
+    if let Some(ref path) = cli.result {
+        // Extract the parent directory of the provided path
+        if let Some(parent_dir) = Path::new(path).parent() {
+            // If the parent directory does not exist, exit now.
+            if ! parent_dir.exists() {
+                println!("The provided result folder does not exist.");
+
+                process::exit(1);
+            }
+        } else {
+            println!("Invalid result path provided.");
+
+            process::exit(1);
+        }
+    }
+
+
+    // Config file (JSON for Exclusion Zones)
+
+    // If the config argument was used, evaluate and prep the data
+    if let Some(ref _value) = cli.config {
+
+        if let Some(ref path) = cli.config {
+            
+            // If the config path does not exist, exit now.
+            if ! Path::new(path).exists() {
+                println!("The specified config file does not exist.");
+
+                process::exit(1);
+            } 
+
+            // Consume the contents of the json file, placing them into the previously defined JSON object
+            // Read the file to a string
+            let mut file = File::open(path).expect("Failed to open the specified config file.");
+            let mut content = String::new();
+            file.read_to_string(&mut content).expect("Failed to read the specified config file.");
+
+            // Deserialize the JSON content to the Config struct
+            config_json = Some(serde_json::from_str(&content).expect("\n\nFailed to deserialize JSON in config file.\
+                \n\nTips:\
+                \nVerify that the config file contains a valid JSON object.\
+                \nIf excluding more than one region, be sure there is a comma separating their lines in the config file.\
+                \nIf a value between 0 or 1 is desired for x or y, use a zero before the decimal.\
+                \nSee the install folder for an example JSON config file.\n\n"));
+            
+            // println!("{:?}", config_json);
+
+        } 
+    }
+
+
+    // Define a temp folder to use based on the system temp folder
+
+    let temp_path: PathBuf = common::get_temp_dir("pdf_match");
+
+    if cli.debug {
+        println!("App-specific temp directory is: {:?}", temp_path);
+    }
+
+    // Bind to the pdfium library (external, pre-built pdfium.dll)
+
+    let pdfium = Pdfium::new(
+        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
+    );
+
+    // Load the pdf documents...
+    let pdf_document_1 = pdfium.load_pdf_from_file(&cli.original_pdf1_path, None)?;
+    let pdf_document_2 = pdfium.load_pdf_from_file(&cli.original_pdf2_path, None)?;
+
+
+
+
     // ************************************************************************************** //
     // ******************** License Logic *************************************************** //
     // ************************************************************************************** //
@@ -371,205 +472,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
     }
 
+    // ****** End Initial License Logic ******* //
 
 
 
-    // ******************** Command-Line Info Verification ********************* //
-
-    // If the user provided an output file, check to see if the included folder exists
-    if let Some(ref path) = cli.output {
-        // Extract the parent directory of the provided path
-        if let Some(parent_dir) = Path::new(path).parent() {
-            // If the parent directory does not exist, exit now.
-            if ! parent_dir.exists() {
-                println!("The provided output folder does not exist.");
-
-                // Release license before exiting the app
-                if let Some(ref local_license_key) = final_license_key {
-                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                        ReleaseLicenseResult::Success(msg) => {
-                            if cli.debug {
-                                println!("Keygen: Successful License Release: {}", msg);
-                            }
-                        }
-                        ReleaseLicenseResult::Error(e) => {
-                            if cli.debug {
-                                println!("Keygen: Error Releasing License: {}", e);
-                            }
-                        },
-                        ReleaseLicenseResult::DeactivationFailed(msg) => {
-                            if cli.debug {
-                                println!("Keygen: License Release Failed: {}", msg);
-                            }
-                        },
-                    }
-                }
-
-                process::exit(1);
-            }
-        } else {
-            println!("Invalid output path provided.");
-
-            // Release license before exiting the app
-            if let Some(ref local_license_key) = final_license_key {
-                //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                    ReleaseLicenseResult::Success(msg) => {
-                        if cli.debug {
-                            println!("Keygen: Successful License Release: {}", msg);
-                        }
-                    }
-                    ReleaseLicenseResult::Error(e) => {
-                        if cli.debug {
-                            println!("Keygen: Error Releasing License: {}", e);
-                        }
-                    },
-                    ReleaseLicenseResult::DeactivationFailed(msg) => {
-                        if cli.debug {
-                            println!("Keygen: License Release Failed: {}", msg);
-                        }
-                    },
-                }
-            }
-
-            process::exit(1);
-        }
-    }
-
-    // If the user provided a result file, check to see if the included folder exists
-    if let Some(ref path) = cli.result {
-        // Extract the parent directory of the provided path
-        if let Some(parent_dir) = Path::new(path).parent() {
-            // If the parent directory does not exist, exit now.
-            if ! parent_dir.exists() {
-                println!("The provided result folder does not exist.");
-
-                // Release license before exiting the app
-                if let Some(ref local_license_key) = final_license_key {
-                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                        ReleaseLicenseResult::Success(msg) => {
-                            if cli.debug {
-                                println!("Keygen: Successful License Release: {}", msg);
-                            }
-                        }
-                        ReleaseLicenseResult::Error(e) => {
-                            if cli.debug {
-                                println!("Keygen: Error Releasing License: {}", e);
-                            }
-                        },
-                        ReleaseLicenseResult::DeactivationFailed(msg) => {
-                            if cli.debug {
-                                println!("Keygen: License Release Failed: {}", msg);
-                            }
-                        },
-                    }
-                }
-
-                process::exit(1);
-            }
-        } else {
-            println!("Invalid result path provided.");
-
-            // Release license before exiting the app
-            if let Some(ref local_license_key) = final_license_key {
-                //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                    ReleaseLicenseResult::Success(msg) => {
-                        if cli.debug {
-                            println!("Keygen: Successful License Release: {}", msg);
-                        }
-                    }
-                    ReleaseLicenseResult::Error(e) => {
-                        if cli.debug {
-                            println!("Keygen: Error Releasing License: {}", e);
-                        }
-                    },
-                    ReleaseLicenseResult::DeactivationFailed(msg) => {
-                        if cli.debug {
-                            println!("Keygen: License Release Failed: {}", msg);
-                        }
-                    },
-                }
-            }
-
-            process::exit(1);
-        }
-    }
-
-    // If the config argument was used, evaluate and prep the data
-    if let Some(ref _value) = cli.config {
-
-        if let Some(ref path) = cli.config {
-            
-            // If the config path does not exist, exit now.
-            if ! Path::new(path).exists() {
-                println!("The provided config file does not exist.");
-
-                // Release license before exiting the app
-                if let Some(ref local_license_key) = final_license_key {
-                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                        ReleaseLicenseResult::Success(msg) => {
-                            if cli.debug {
-                                println!("Keygen: Successful License Release: {}", msg);
-                            }
-                        }
-                        ReleaseLicenseResult::Error(e) => {
-                            if cli.debug {
-                                println!("Keygen: Error Releasing License: {}", e);
-                            }
-                        },
-                        ReleaseLicenseResult::DeactivationFailed(msg) => {
-                            if cli.debug {
-                                println!("Keygen: License Release Failed: {}", msg);
-                            }
-                        },
-                    }
-                }
-
-                process::exit(1);
-            } 
-
-            // Consume the contents of the json file, placing them into the previously defined JSON object
-            // Read the file to a string
-            let mut file = File::open(path).expect("Failed to open the specified config file.");
-            let mut content = String::new();
-            file.read_to_string(&mut content).expect("Failed to read the specified config file.");
-
-            // Deserialize the JSON content to the Config struct
-            config_json = Some(serde_json::from_str(&content).expect("\n\nFailed to deserialize JSON.\
-                \n\nTips:\
-                \nVerify that the config file contains a valid JSON object.\
-                \nIf a value between 0 or 1 is desired for x or y, use a zero before the decimal.\n\n"));
-            
-            // println!("{:?}", config_json);
-
-        } 
-    }
-
-
-    // Define a temp folder to use based on the system temp folder
-
-    let temp_path: PathBuf = common::get_temp_dir("pdf_match");
-
-    if cli.debug {
-        println!("App-specific temp directory is: {:?}", temp_path);
-    }
-
-    // Bind to the pdfium library (external, pre-built pdfium.dll)
-
-    let pdfium = Pdfium::new(
-        Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path("./")).unwrap()
-    );
-
-    // Load the pdf documents...
-    let pdf_document_1 = pdfium.load_pdf_from_file(&cli.original_pdf1_path, None)?;
-    let pdf_document_2 = pdfium.load_pdf_from_file(&cli.original_pdf2_path, None)?;
-
-
-    // Get the number of pages for each document
+    // Get the number of pages for each PDF document
     let doc1_pages = pdf_document_1.pages().len();
     let doc2_pages = pdf_document_2.pages().len();
 

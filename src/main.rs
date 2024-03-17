@@ -443,28 +443,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Error handling for file read failure
                 println!("General file read failure for license config file.");
 
-                // Release license before exiting the app
-                if let Some(ref local_license_key) = final_license_key {
-                    //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-                    match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                        ReleaseLicenseResult::Success(msg) => {
-                            if cli.debug {
-                                println!("Keygen: Successful License Release: {}", msg);
-                            }
-                        }
-                        ReleaseLicenseResult::Error(e) => {
-                            if cli.debug {
-                                println!("Keygen: Error Releasing License: {}", e);
-                            }
-                        },
-                        ReleaseLicenseResult::DeactivationFailed(msg) => {
-                            if cli.debug {
-                                println!("Keygen: License Release Failed: {}", msg);
-                            }
-                        },
-                    }
-                }
-
                 std::process::exit(1);
             }
         }

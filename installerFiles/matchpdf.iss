@@ -48,6 +48,9 @@ Source: "C:\repos\match_pdf\licenseFiles\Readme.txt"; DestDir: "{app}"; Flags: i
 Source: "C:\temp\installerFiles\UserGuide.pdf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\temp\installerFiles\example1.pdf"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\temp\installerFiles\example2.pdf"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\temp\installerFiles\sample-exclude-region1.pdf"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\temp\installerFiles\sample-exclude-region2.pdf"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\temp\installerFiles\sample-exclude-region-config.json"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

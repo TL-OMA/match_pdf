@@ -191,7 +191,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Define global variables
     let mut differences_found_in_document: bool = false;
-    let mut differences_found_in_page: bool;
+    let mut differences_found_in_page: bool = false;
+    let mut different_pages_count: i32 = 0;
     let mut differences_in_number_of_pages: bool = false;
     let mut config_json: Option<Config> = None;
     let license_crypto_key = "MIICWwIBAAKBgQCq447HSp9vCaaLaZdDA71sOBbM1/tLwPSAbWxgefb8jI+9z80ssctY5jNDESBzFo5tVr3M5iAge28QpWuUkxbeidS";
@@ -487,6 +488,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // ... then iterate through the pages until reaching the end of the shortest document
         for index in 0..doc1_pages {
 
+
+            if differences_found_in_page {
+                different_pages_count += 1;
+            }
+
             // Reset variables
             differences_found_in_page = false;
 
@@ -618,8 +624,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the user used the 'output' argument 
             if let Some(ref _value) = cli.output{
             
-                // AND (there are page differences OR justdiff is false)
-                if differences_found_in_page || !cli.justdiff {
+                // If there are fewer than 500 different pages so far AND
+                // (the current page has differences OR (justdiff is off AND the total document is less than 500 pages)
+                // The condition for < 500 pages was added due to memory constraints.  Issues could occur at 1000+ pages depending on available system resources.
+                // Essentially, we do not want to make an output file greater than 500 pages so memory issues can be prevented.
+                if (differences_found_in_page || (!cli.justdiff && doc1_pages < 500)) && different_pages_count < 500 {
 
                     // Take actions to highlight differences and create an output document
 

@@ -10,7 +10,7 @@ match_pdf.exe --license example1.pdf example2.pdf
 
 (Get a paid or trial license at MatchPDF.com)
 
-See the UserGuide.pdf in your install directory (default C:\ProgramFiles\MatchPDF) for more info.
+See the UserGuide.pdf in your install directory for more info.
 
 Send us questions at MatchPDF@protonmail.com
 

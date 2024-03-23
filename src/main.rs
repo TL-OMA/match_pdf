@@ -631,7 +631,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if (differences_found_in_page || (!cli.justdiff && doc1_pages < 500)) && different_pages_count < 500 {
 
                     // Take actions to highlight differences and create an output document
-
+c
                     // Create the highlighted image variables in the current scope
                     let doc1_page_highlighted_image;
                     let doc2_page_highlighted_image;
@@ -798,11 +798,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the user used the pages flag and gave it a value
             if let Some(value) = cli.pages {
 
-                // If the index (page) is the same as the page the user specified
-                if value == (index + 1) as i32{
+                // If the index (page) is the same as the page the user specified AND differences have been found in the document
+                if (value == (index + 1) as i32) && differences_found_in_document{
 
                     if cli.debug {
-                        println!("The 'pages' flag was set with value {}, so the comparison is stopping now since differences were found.", value);
+                        println!("The 'pages' flag was set with value {}, and differences have been found, so the comparison is stopping.", value);
                     }
 
                     // Break out of the for loop and finish up

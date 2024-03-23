@@ -27,7 +27,7 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.3")]
+#[command(version = "1.0.4")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,

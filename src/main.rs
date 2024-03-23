@@ -27,7 +27,7 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.2")]
+#[command(version = "1.0.3")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,
@@ -631,7 +631,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if (differences_found_in_page || (!cli.justdiff && doc1_pages < 500)) && different_pages_count < 500 {
 
                     // Take actions to highlight differences and create an output document
-c
                     // Create the highlighted image variables in the current scope
                     let doc1_page_highlighted_image;
                     let doc2_page_highlighted_image;

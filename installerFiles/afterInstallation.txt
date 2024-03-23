@@ -1,10 +1,12 @@
 Thank you for installing MatchPDF!
 
+Be sure to add match_pdf to your path.
+
 Install your license using a command prompt by simply running the executable:
-C:\match_pdf.exe example1.pdf example2.pdf
+match_pdf.exe example1.pdf example2.pdf
   
 If a license was previously installed, a new one can be applied:
-C:\match_pdf.exe --license example1.pdf example2.pdf
+match_pdf.exe --license example1.pdf example2.pdf
 
 (Get a paid or trial license at MatchPDF.com)
 

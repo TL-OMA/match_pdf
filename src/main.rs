@@ -27,7 +27,7 @@ use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.4")]
+#[command(version = "1.0.5")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,
@@ -624,11 +624,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // If the user used the 'output' argument 
             if let Some(ref _value) = cli.output{
             
+
+                // create a boolean for the below conditional
+                let mut max_pages_is_less_than_500: bool = false;
+
+                // If the user used the max pages flag and gave it a value
+                if let Some(value) = cli.maxpages {
+
+                    // If the value is less than 500
+                    if value < 500{
+
+                        max_pages_is_less_than_500 = true;
+                    }
+
+                }
+
+
+
                 // If there are fewer than 500 different pages so far AND
-                // (the current page has differences OR (justdiff is off AND the total document is less than 500 pages)
+                // (the current page has differences OR (justdiff is off AND (the total document is less than 500 pages OR the maxpages is less than 500))
                 // The condition for < 500 pages was added due to memory constraints.  Issues could occur at 1000+ pages depending on available system resources.
                 // Essentially, we do not want to make an output file greater than 500 pages so memory issues can be prevented.
-                if (differences_found_in_page || (!cli.justdiff && doc1_pages < 500)) && different_pages_count < 500 {
+                if (differences_found_in_page || (!cli.justdiff && (doc1_pages < 500 || max_pages_is_less_than_500))) && different_pages_count < 500 {
 
                     // Take actions to highlight differences and create an output document
                     // Create the highlighted image variables in the current scope

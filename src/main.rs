@@ -5,22 +5,13 @@ mod images;
 use clap::Parser;
 use image::DynamicImage;
 use image::{Rgba, RgbaImage};
-use std::fs::{self, File};
-use std::io::{self, Read, Write, ErrorKind};
+use std::fs::{File};
+use std::io::{Read, Write};
 use std::process;
 use std::path::PathBuf;
 use std::path::Path;
-use std::time::Instant;
-use std::time::Duration;
 use pdfium_render::prelude::*;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use uuid::Uuid;
-use reqwest;
-use reqwest::blocking::Client;
-use reqwest::StatusCode;
-use std::error::Error;
-use magic_crypt::{MagicCryptTrait, new_magic_crypt};
 
 
 // Define and collect arguments
@@ -109,6 +100,7 @@ pub struct Config {
     pub ignored_rectangles: Vec<Rectangle>,
 }
 
+
 impl Config {
     // This method returns a Vec of matching rectangles for a given page value
 
@@ -195,7 +187,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut different_pages_count: i32 = 0;
     let mut differences_in_number_of_pages: bool = false;
     let mut config_json: Option<Config> = None;
-    let license_crypto_key = "MIICWwIBAAKBgQCq447HSp9vCaaLaZdDA71sOBbM1/tLwPSAbWxgefb8jI+9z80ssctY5jNDESBzFo5tVr3M5iAge28QpWuUkxbeidS";
 
 
     // Parse the command line arguments
@@ -247,11 +238,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             None => println!("The 'config' flag was not set."),
         }
     
-        if cli.license {
-            println!("The 'license' flag was set.  This forces the prompt for a new license even if an existing license is stored locally.");
-        } else {
-            println!("The 'license' flag was not set.");
-        }
     } 
 
 
@@ -344,116 +330,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load the pdf documents...
     let pdf_document_1 = pdfium.load_pdf_from_file(&cli.original_pdf1_path, None)?;
     let pdf_document_2 = pdfium.load_pdf_from_file(&cli.original_pdf2_path, None)?;
-
-
-
-
-    // ************************************************************************************** //
-    // ******************** License Logic *************************************************** //
-    // ************************************************************************************** //
-
-    // Keygen Account ID
-    let keygen_account_id = "ed7e781e-3c3f-4ecc-a451-3c40333c093e";
-
-    // Create a fingerprint (UUID) for this run instance
-    let instance_uuid = Uuid::new_v4();
-
-    // Convert to a string
-    let fingerprint_uuid = instance_uuid.to_string();
-
-    let mut final_license_key: Option<String> = None;
-
-    if cli.debug {
-        println!("Generated run instance UUID for license activation: {:?}", fingerprint_uuid);
-    }
-
-    // Local license configuration file work
-    
-    // Define some variables
-    let license_config_folder = "C:\\ProgramData\\MatchPDF";
-    let license_config_path = Path::new(license_config_folder).join("licenseConfig.dat");
-
-    // Initialize magic_crypt
-    let decrypt_magic_crypt_instance = new_magic_crypt!(license_crypto_key, 256);
-
-    // If the config file exists and the 'license' flag is not set
-    if Path::new(&license_config_path).exists() && !cli.license {
-        
-        // Read the contents of the config file
-        match fs::read_to_string(&license_config_path) {
-            Ok(encrypted_contents) => {
-                
-                // Decrypt the contents
-                let decrypted_license_config_contents = decrypt_magic_crypt_instance.decrypt_base64_to_string(&encrypted_contents)
-                    .expect("Failed to decrypt the file contents - the license config file may be corrupt.  Please run \"match_pdf.exe --license example1.pdf example2.pdf\" to reinstall your license.");
-
-                match serde_json::from_str::<Value>(&decrypted_license_config_contents) {
-                    Ok(json) => {
-                        
-                        // Extract the license key
-                        if let Some(license_key) = json["license_key"].as_str() {
-                        
-                            // Attempt to activate the license
-                            match activate_license(keygen_account_id, &fingerprint_uuid, license_key) {
-                                LicenseActivationResult::Success(msg) => {
-                                    if cli.debug {
-                                        println!("Keygen: Success: {}", msg);
-                                    }
-                                    final_license_key = Some(license_key.to_string());
-                                },    
-                                LicenseActivationResult::Error(e) => {
-                                    println!("Keygen: Error Activating License: {}", e);
-                                    std::process::exit(1);
-                                },
-                                LicenseActivationResult::ValidationFailed(msg) => {
-                                    println!("Keygen: License Validation Failed: {}", msg);
-                                    std::process::exit(1);
-                                },
-                                LicenseActivationResult::ActivationFailed(msg) => {
-                                    println!("Keygen: License Activation failed: {}", msg);
-                                    std::process::exit(1);
-                                },
-                            }
-                        } else {
-                            // Prompt for license key if JSON is invalid
-                            println!("Stored license key: Failed to read JSON.");
-                            
-                            get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
-                            
-                        }
-                    },
-                    Err(_) => {
-                        // Prompt for license key if JSON parsing fails
-                        println!("Stored license key JSON information invalid.");
-
-                        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
-                        
-                    }
-                }
-            },
-            Err(_) => {
-                // Error handling for file read failure
-                println!("General file read failure for license config file.");
-
-                std::process::exit(1);
-            }
-        }
-    } else {
-        // File doesn't exist or the license flag is set: prompt for license key
-        println!("License Key does not yet exist locally or the 'license' flag was used.");
-
-        get_and_store_license_key(keygen_account_id, &fingerprint_uuid, license_config_path, cli.debug, &license_crypto_key);
-    }
-
-    // If we made it this far, a license is now active.  Mark the time.
-    // A two minute timer starts now.
-    // The keygen.sh license policy is set to a 120 second (2 minute) heartbeat duration.
-    // We'll only release the license if it's been 118 seconds or less since activation.
-    // Otherwise, a "release" call will fail.
-    let license_activation_start_time = Instant::now();
-
-
-    // ****** End Initial License Logic ******* //
 
 
 
@@ -925,327 +801,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // ********** //
-    // Release license before exiting the app (happy path)
-    // ********** //
-
-    // Check if elapsed time since license actvation is less than 118 seconds (2 minutes minus a couple seconds)
-    // See comment at license_activation_start_time for explanation.
-    let elapsed_time = license_activation_start_time.elapsed();
-    if elapsed_time < Duration::from_secs(118) {
-        
-        // If it's been under 2 minutes, the license needs to be released.
-        if let Some(ref local_license_key) = final_license_key {
-            //release_license(keygen_account_id, &fingerprint_uuid, local_license_key);
-            match release_license(keygen_account_id, &fingerprint_uuid, local_license_key){
-                ReleaseLicenseResult::Success(msg) => {
-                    if cli.debug {
-                        println!("Keygen: Successful License Release: {}", msg);
-                    }
-                }
-                ReleaseLicenseResult::Error(e) => {
-                    if cli.debug {
-                        println!("Keygen: Error Releasing License: {}", e);
-                    }
-                },
-                ReleaseLicenseResult::DeactivationFailed(msg) => {
-                    if cli.debug {
-                        println!("Keygen: License Release Failed: {}", msg);
-                    }
-                },
-            }
-        }
-
-    } 
     
     Ok(())
 
-}
-
-
-
-
-// Custom Enum to define results coming out of the activate_license function
-enum LicenseActivationResult {
-    Success(String),
-    Error(Box<dyn Error>),
-    ValidationFailed(String),
-    ActivationFailed(String),
-}
-
-
-
-// Activate License Function
-// Function to activate a software license using the Keygen API
-// Emulating https://github.com/keygen-sh/example-python-machine-activation/blob/master/main.py
-// Send MatchPDF keygenAccountID, UUID fingerprint, and this customer's license key
-
-fn activate_license(keygen_account_id: &str, fingerprint: &str, license_key: &str) -> LicenseActivationResult {
-
-    // Create a new HTTP client instance
-    let client = Client::new();
-
-    // Attempt to validate the license key with the Keygen API
-    let validation_resp = match client.post(&format!(
-        "https://api.keygen.sh/v1/accounts/{}/licenses/actions/validate-key",
-        keygen_account_id
-    ))
-    .json(&json!({
-        "meta": {
-            "scope": { "fingerprint": fingerprint },
-            "key": license_key
-        }
-    }))
-    .send() {
-        Ok(resp) => resp,
-        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
-    };
-
-    // Parse the JSON response for validation
-    let validation = match validation_resp.json::<Value>() {
-        Ok(v) => v,
-        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
-    };
-
-    // Check for errors in the validation response and handle them.
-    if validation.get("errors").is_some() {
-        let errs = validation["errors"].as_array().unwrap();
-        let error_messages: Vec<String> = errs
-            .iter()
-            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
-            .collect();
-
-        return LicenseActivationResult::ValidationFailed(format!("License validation failed: {:?}", error_messages));
-    }
-
-    // Check if the license is already active
-    if validation["meta"]["valid"].as_bool().unwrap_or(false) {
-        return LicenseActivationResult::Success("License has already been activated on this machine".to_string());
-    }
-
-    // Determine if activation is required based on the activation code
-    let validation_code = validation["meta"]["code"].as_str().unwrap_or("");
-    let activation_is_required = match validation_code {
-        "FINGERPRINT_SCOPE_MISMATCH" | "NO_MACHINES" | "NO_MACHINE" => true,
-        _ => false,
-    };
-
-    // Handle cases where activation is not required
-    if !activation_is_required {
-        return LicenseActivationResult::ValidationFailed(format!("License {}", validation["meta"]["detail"].as_str().unwrap_or_default()));
-    }
-
-    // Activate the machine with the license if required
-    let activation_resp = match client.post(&format!(
-        "https://api.keygen.sh/v1/accounts/{}/machines",
-        keygen_account_id
-    ))
-    .json(&json!({
-        "data": {
-            "type": "machines",
-            "attributes": {
-                "fingerprint": fingerprint
-            },
-            "relationships": {
-                "license": {
-                    "data": { "type": "licenses", "id": validation["data"]["id"] }
-                }
-            }
-        }
-    }))
-    .header("Authorization", format!("License {}", license_key))
-    .send() {
-        Ok(resp) => resp,
-        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
-    };
-
-    // Parse the JSON response for activation
-    let activation = match activation_resp.json::<Value>() {
-        Ok(a) => a,
-        Err(e) => return LicenseActivationResult::Error(Box::new(e)),
-    };
-
-    // Check for errors in the activation response and handle them
-    if activation.get("errors").is_some() {
-        let errs = activation["errors"].as_array().unwrap();
-        let error_messages: Vec<String> = errs
-            .iter()
-            .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
-            .collect();
-
-        return LicenseActivationResult::ActivationFailed(format!("License activation failed: {:?}", error_messages));
-    }
-
-    // Return success if the license is successfully activated
-    LicenseActivationResult::Success("License activated for this machine".to_string())
-}
-
-
-// Function to prompt for and retrieve the license key from the user
-fn get_and_store_license_key(keygen_account_id: &str, fingerprint: &str, license_config_path: PathBuf, debug_flag: bool, license_crypto_key: &str) {
-    let mut license_key = String::new();
-
-    // Keep prompting until a valid license key is entered
-    loop {
-        print!("Please enter your license key: ");
-        io::stdout().flush().unwrap(); // Ensure the prompt is displayed immediately
-        io::stdin().read_line(&mut license_key).expect("Failed to read line");
-
-        // Trim newline and whitespace
-        license_key = license_key.trim().to_string();
-
-        // If a non-zero length license key has been entered, let's try it!
-        if !license_key.is_empty() {
-
-            // Attempt to activate the license
-            match activate_license(keygen_account_id, &fingerprint, &license_key) {
-                LicenseActivationResult::Success(msg) => {
-                    println!("Keygen: Success: {}", msg);
-                    break; // Break the loop if the license key is valid
-                }
-                LicenseActivationResult::Error(e) => {
-                    println!("Keygen: Error Activating License: {}", e);
-                    std::process::exit(1);
-                },
-                LicenseActivationResult::ValidationFailed(msg) => {
-                    println!("Keygen: License Validation Failed: {}", msg);
-                    std::process::exit(1);
-                },
-                LicenseActivationResult::ActivationFailed(msg) => {
-                    println!("Keygen: License Activation failed: {}", msg);
-                    std::process::exit(1);
-                },
-            }
-
-        } else {
-            println!("License key cannot be empty.\n");
-        }
-    }
-
-    // Above loop is only broken IF the license was successfully activated.
-    // We'll deactivate here:
-    //   - The license config file write could fail below, and we want to be ready for another try.
-    //   - The app will not run its core functionality after running get_and_store_license_key().
-
-    match release_license(keygen_account_id, fingerprint, &license_key){
-        ReleaseLicenseResult::Success(msg) => {
-            if debug_flag {
-                println!("Keygen: Successful License Release: {}", msg);
-            }
-        }
-        ReleaseLicenseResult::Error(e) => {
-            if debug_flag {
-                println!("Keygen: Error Releasing License: {}", e);
-            }
-        },
-        ReleaseLicenseResult::DeactivationFailed(msg) => {
-            if debug_flag {
-                println!("Keygen: License Release Failed: {}", msg);
-            }
-        },
-    }
-
-
-    // Create the JSON object
-    let license_data = json!({
-        "license_key": &license_key,
-        // Add other fields if necessary
-    });
-
-    // Write to the file
-    {
-        // Initialze magic_crypt with a secret key and a bit mode
-        let magic_crypt_instance = new_magic_crypt!(license_crypto_key, 256);
-
-        // Ensure the directory exists
-        if let Some(parent) = license_config_path.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent).expect("Failed to create config directory.  Be sure this app and user have write access to C:\\ProgramData");
-            }
-        }
-
-        // Convert data to JSON and encrypt it
-        let json_data = serde_json::to_string(&license_data).unwrap();
-        let encrypted_json_data = magic_crypt_instance.encrypt_str_to_base64(json_data);
-
-        // Attempt to open or create the file
-        match File::create(&license_config_path) {
-            Ok(_) => {
-                // Write the encrypted data to the file
-                fs::write(&license_config_path, encrypted_json_data)
-                    .expect("Failed to write to the license config file");
-            },
-            Err(e) => {
-                // Handle specific error if the file does not exist
-                if e.kind() != ErrorKind::AlreadyExists {
-                    panic!("Failed to create the license config file: {}", e);
-                }
-            }
-        }
-    }
-
-    println!("License key successfully saved: {:?}", license_key);
-    println!("Exiting application.  Rerun MatchPDF to use it with this saved key.");
-    std::process::exit(0);
-
-}
-
-
-
-// Custom Enum to define results coming out of the release_license function
-enum ReleaseLicenseResult {
-    Success(String),
-    Error(Box<dyn Error>),
-    DeactivationFailed(String),
-}
-
-
-// The following function essentially releases the license that this app run instance is holding.
-fn release_license(keygen_account_id: &str, fingerprint: &str, license_key: &str) -> ReleaseLicenseResult {
-    let client = Client::new();
-
-    // Build and send the request
-    let deactivation_resp = match client.delete(&format!(
-        "https://api.keygen.sh/v1/accounts/{}/machines/{}",
-        keygen_account_id,
-        fingerprint
-    ))
-    .header("Authorization", format!("License {}", license_key))
-    .send() {
-        Ok(resp) => resp,
-        Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
-    };
-
-    // Check the response status code
-    match deactivation_resp.status() {
-        StatusCode::OK => {
-            let deactivation = match deactivation_resp.json::<Value>() {
-                Ok(json) => json,
-                Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
-            };
-
-            if deactivation.get("errors").is_some() {
-                let errs = deactivation["errors"].as_array().unwrap();
-                let error_messages: Vec<String> = errs
-                    .iter()
-                    .map(|e| format!("{} - {}", e["title"], e["detail"]).to_lowercase())
-                    .collect();
-
-                return ReleaseLicenseResult::DeactivationFailed(format!("License release failed: {:?}", error_messages));
-            }
-
-            ReleaseLicenseResult::Success("License successfully released.".to_string())
-        },
-        StatusCode::NO_CONTENT => ReleaseLicenseResult::Success("Success response received.".to_string()),
-        _ => {
-            let body = match deactivation_resp.text() {
-                Ok(text) => text,
-                Err(e) => return ReleaseLicenseResult::Error(Box::new(e)),
-            };
-            println!("Error Response Body: {:?}", body);
-            ReleaseLicenseResult::DeactivationFailed(format!("Unexpected response: {}", body))
-        },
-    }
 }
 
 

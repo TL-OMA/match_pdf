@@ -57,9 +57,6 @@ struct Cli {
     #[arg(short, long)]
     config: Option<PathBuf>,
 
-    /// An optional 'license' flag: Force the prompt for a new license, even if one is stored locally already.
-    #[arg(short, long)]
-    license: bool,
 }
 
 

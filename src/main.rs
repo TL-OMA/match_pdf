@@ -742,7 +742,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         
         }
-}
+    }
 
 
     if differences_found_in_document || differences_in_number_of_pages {

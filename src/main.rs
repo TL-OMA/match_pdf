@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Parser, Debug)]
 #[command(name = "match_pdf")]
 #[command(author = "author")]
-#[command(version = "1.0.6")]
+#[command(version = "1.0.7")]
 #[command(about = "MatchPDF compares two pdf documents.", long_about = None)]
 struct Cli {
     original_pdf1_path: PathBuf,

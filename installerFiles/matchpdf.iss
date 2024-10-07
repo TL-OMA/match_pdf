@@ -24,7 +24,7 @@ ArchitecturesAllowed=x64
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=C:\repos\match_pdf\licenseFiles\MatchPDFLicense.txt
+LicenseFile=C:\repos\match_pdf\licenseFiles\LICENSE-MatchPDF
 InfoBeforeFile=C:\repos\match_pdf\installerFiles\beforeInstallation.txt
 InfoAfterFile=C:\repos\match_pdf\installerFiles\afterInstallation.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)

@@ -43,8 +43,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "C:\repos\match_pdf\target\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\repos\match_pdf\target\release\pdfium.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\repos\match_pdf\licenseFiles\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\repos\match_pdf\licenseFiles\MatchPDFLicense.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\repos\match_pdf\licenseFiles\LICENSE-pdfium"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\repos\match_pdf\licenseFiles\LICENSE-MatchPDF"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\repos\match_pdf\licenseFiles\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\repos\match_pdf\licenseFiles\Readme.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\temp\installerFiles\UserGuide.pdf"; DestDir: "{app}"; Flags: ignoreversion
